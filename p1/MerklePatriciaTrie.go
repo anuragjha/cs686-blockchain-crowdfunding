@@ -3,8 +3,11 @@ package p1
 import (
 	"encoding/hex"
 	"fmt"
+	"os"
 	"reflect"
+	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/crypto/sha3"
 )
@@ -23,6 +26,12 @@ type Node struct {
 type MerklePatriciaTrie struct {
 	db   map[string]Node
 	Root string
+}
+
+func (mpt *MerklePatriciaTrie) Initial() {
+
+	mpt.db = make(map[string]Node)
+	mpt.Root = ""
 }
 
 func (mpt *MerklePatriciaTrie) Get(key string) (string, error) {
@@ -47,13 +56,13 @@ func (mpt *MerklePatriciaTrie) Insert(key string, new_value string) {
 
 	pathLeft := StringToHexArray(key)
 	if mpt.Root == "" {
-		// pathLeft = append(pathLeft, 16)
-		// leafNode := Node{}
-		// leafNode.node_type = 2
-		// leafNode.flag_value.encoded_prefix = compact_encode(pathLeft)
-
-		// leafNode.flag_value.value = new_value
-		// mpt.Root = mpt.insertHelper(leafNode, nil, "", nil)
+		//pathLeft = append(pathLeft, 16)
+		//leafNode := Node{}
+		//leafNode.node_type = 2
+		//leafNode.flag_value.encoded_prefix = compact_encode(pathLeft)
+		//
+		//leafNode.flag_value.value = new_value
+		//mpt.Root = mpt.insertHelper(leafNode, nil, "", nil)
 		//>>
 		mpt.Root = mpt.insertHelper1(Node{}, pathLeft, new_value)
 
@@ -172,12 +181,6 @@ func node_to_string(node Node) string {
 	return node.String()
 }
 
-func (mpt *MerklePatriciaTrie) Initial() {
-
-	mpt.db = make(map[string]Node)
-	mpt.Root = ""
-}
-
 func is_ext_node(encoded_arr []uint8) bool {
 	return encoded_arr[0]/16 < 2
 }
@@ -273,4 +276,18 @@ func HexArraytoString(hexArray []uint8) string {
 		asciiPath = append(asciiPath, 16*hexArray[i]+hexArray[i+1])
 	}
 	return string(asciiPath)
+}
+
+// func to generate randomMPT
+func GenerateRandomMPT() MerklePatriciaTrie {
+	mpt := MerklePatriciaTrie{}
+	mpt.Initial()
+
+	random := int((time.Now().UnixNano() / 100000 % 5))
+	for i := 1; i <= random+1; i++ {
+		//log.Println("making mpt : ", i)
+		//random := strconv.Itoa(rand.Int() % 10)
+		mpt.Insert("Time Now "+strconv.Itoa(i), time.Now().Format(time.UnixDate)+" is humbly yours "+os.Args[1])
+	}
+	return mpt
 }

@@ -1,9 +1,11 @@
 package p3
 
 import (
+	//"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
+	//"math/rand"
 	"net/http"
 	"os"
 	"strconv"
@@ -14,6 +16,8 @@ import (
 
 	"../p1"
 	"../p2/block"
+	//"../p2"
+	"../p4"
 	"./data"
 )
 
@@ -21,7 +25,7 @@ import (
 var INIT_SERVER = "http://localhost:6686"
 
 //var REGISTER_SERVER = TA_SERVER + "/peer"
-var REGISTER_SERVER = INIT_SERVER + "/peer"
+//var REGISTER_SERVER = INIT_SERVER + "/peer"
 
 //SELF_ADDR var BC_DOWNLOAD_SERVER = TA_SERVER + "/upload"
 var BC_DOWNLOAD_SERVER = INIT_SERVER + "/upload"
@@ -35,6 +39,11 @@ var SBC data.SyncBlockChain
 
 //Peers is the Peer List which is for each node
 var Peers data.PeerList
+
+var tryingForHeight int32
+var GetNewParent bool
+
+const Difficulty = 5
 
 var ifStarted bool
 
@@ -60,10 +69,12 @@ func Start(w http.ResponseWriter, r *http.Request) {
 		id := Register()                 //register ID
 		Peers = data.NewPeerList(id, 32) //initialize PeerList // 32 sunnit
 		SBC = data.NewBlockChain()       //create new Block chain //apr4
+
 		if Peers.GetSelfId() == 6686 {
 			mpt := p1.MerklePatriciaTrie{}
 			mpt.Insert("First Message", "Anurag's blockchain")
-			b1 := SBC.GenBlock(mpt)
+			nonce := p4.FindNonce("genesis", &mpt, Difficulty)
+			b1 := SBC.GenBlock(1, "genesis", mpt, nonce)
 			SBC.Insert(b1)
 		}
 
@@ -76,6 +87,7 @@ func Start(w http.ResponseWriter, r *http.Request) {
 
 		//start HearBeat
 		go StartHeartBeat()
+		go StartTryingNonces() //pow
 	}
 	w.WriteHeader(200)
 	_, err := w.Write([]byte("started"))
@@ -89,8 +101,24 @@ func Start(w http.ResponseWriter, r *http.Request) {
 func Show(w http.ResponseWriter, r *http.Request) {
 	_, err := fmt.Fprintf(w, "%s\n%s", Peers.Show(), SBC.Show())
 	if err != nil {
-		log.Println("Err in Shhow func while writing response")
+		log.Println("Err in show func while writing response")
 	}
+}
+
+//Canonical func -  Display canonical chain
+func Canonical(w http.ResponseWriter, r *http.Request) {
+
+	canonicalChains := p4.GetCanonicalChains(&SBC)
+
+	_, _ = fmt.Fprint(w, "Canonical Chain(s) : \n")
+	for i, chain := range canonicalChains {
+		_, _ = fmt.Fprint(w, "\nChain #"+strconv.Itoa(i+1))
+		_, err := fmt.Fprint(w, "\n", chain.ShowCanonical())
+		if err != nil {
+			_, _ = fmt.Fprint(w, "ERROr in Canonical")
+		}
+	}
+	//
 }
 
 // Register to TA's server, get an ID
@@ -144,7 +172,6 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, blockChainJson)
 
 	//remove comments above after testing
-
 	//UploadGenesis(w, r)
 }
 
@@ -203,42 +230,79 @@ func HeartBeatReceive(w http.ResponseWriter, r *http.Request) {
 	} else {
 		defer r.Body.Close()
 
-		heartBeat := data.DecodeToHeartBeatData(string(body)) // heartBeat struct
+		//heartBeat := data.DecodeToHeartBeatData(string(body)) // heartBeat struct
 
-		go processHeartBeat(&heartBeat) // process for the receieved heartbeat
+		go processHeartBeat(data.DecodeToHeartBeatData(string(body))) // process for the receieved heartbeat
 
-		go ForwardHeartBeat(heartBeat) // forward the heartBeat // here sunnit
+		go forwardHeartBeat(data.DecodeToHeartBeatData(string(body))) // forward the heartBeat // here sunnit
 	}
 
 }
 
 // processHeartBeat func updates the peerlist, and IfNewBlock then insert the block in SBC
-func processHeartBeat(heartBeat *data.HeartBeatData) {
+func processHeartBeat(heartBeat data.HeartBeatData) {
 
 	//use hearBeatData to update peer list and get block if the ifNew is set to true
-	updatePeerList(heartBeat)
+	updatePeerList(&heartBeat)
 
 	if heartBeat.IfNewBlock { //add block in blockchain
 
 		newBlock := block.DecodeFromJSON(heartBeat.BlockJson)
+		mptHash := p1.MerklePatriciaTrie(newBlock.Value).Root
 
-		//apr4
-		//hold parent / grandparent / etc blocks to be put once we find the begining block based on nodes local copy
-		//var blockHolder []block.Block
-		//// apr4
+		//y := sha3.Sum256([]byte(newBlock.Header.ParentHash + newBlock.Header.Nonce + mptHash))
+		//y1 := hex.EncodeToString(y[:])
+		//log.Println("++++++++++++++++++++ receieving MPT ROOT at height : ", mptHash)
+		//log.Println("++++++++++++++++++++ receving proof : ", y1)
 
-		if SBC.CheckParentHash(newBlock) {
+		if p4.POW(newBlock.Header.ParentHash, newBlock.Header.Nonce, mptHash, Difficulty) {
+			//fmt.Println(":::: PROCESSING HeartBeat : in ProcessHeartBeat : newBlock.Value.Root : ", mptHash)
 
-			SBC.Insert(newBlock) // if parentHash exist then directly insert
+			//apr4
+			//hold parent / grandparent / etc blocks to be put once we find the begining block based on nodes local copy
+			//var blockHolder []block.Block
+			//// apr4
 
-		} else if AskForBlock(newBlock.Header.Height-1, newBlock.Header.ParentHash, make([]block.Block, 0) /*, SBC.GetLength(), newBlock.Header.Height-1*/) {
-			//if parent cannot be found then ask for parent block and insert both
-			SBC.Insert(newBlock)
-			//AskForBlock(newBlock.Header.Height, newBlock.Header.ParentHash, make([]block.Block, 0), SBC.GetLength()+1, newBlock.Header.Height+1)
+			if SBC.CheckParentHash(newBlock) {
 
+				SBC.Insert(newBlock) // if parentHash exist then directly insert and POW is satisfied
+
+			} else if AskForBlock(newBlock.Header.Height-1, newBlock.Header.ParentHash, make([]block.Block, 0) /*, SBC.GetLength(), newBlock.Header.Height-1*/) {
+				//if parent cannot be found then ask for parent block and insert both
+				SBC.Insert(newBlock)
+				//AskForBlock(newBlock.Header.Height, newBlock.Header.ParentHash, make([]block.Block, 0), SBC.GetLength()+1, newBlock.Header.Height+1)
+
+			}
 		}
 
+		//fmt.Println("NOT processing HeartBeat : in ProcessHeartBeat : newBlock.Value.Root : ", newBlock.Value.Root)
+
 	}
+}
+
+// ForwardHeartBeat func forwards the receieved heartbeat to all its peers
+func forwardHeartBeat(heartBeatData data.HeartBeatData) {
+
+	Peers.Rebalance()
+	peerMap := Peers.Copy()
+	hopCount := heartBeatData.Hops //to forward heartbeat
+	if hopCount > 0 {
+		heartBeatData.Hops--
+		heartBeatData.Id = Peers.GetSelfId()
+		heartBeatData.Addr = SELF_ADDR
+
+		//json, _ := json.Marshal(peerMap)
+		//heartBeatData.PeerMapJson = string(json)
+
+		//list over peers and send them heartBeat
+		if len(peerMap) > 0 {
+			for peer := range peerMap {
+				_, _ = http.Post(peer+"/heartbeat/receive", "application/json; charset=UTF-8",
+					strings.NewReader(heartBeatData.EncodeToJson()))
+			}
+		}
+	}
+
 }
 
 // updatePeerList func updates the existing peerlist with data from received peerMap
@@ -246,57 +310,6 @@ func updatePeerList(heartBeat *data.HeartBeatData) {
 	Peers.Add(heartBeat.Addr, heartBeat.Id)
 	Peers.InjectPeerMapJson(heartBeat.PeerMapJson, SELF_ADDR)
 }
-
-//// AskForBlock - Ask another server to return a block of certain height and hash
-//func AskForBlock(height int32, hash string, blockHolder []block.Block, currentBCHeight int32, initialAskHeight int32) bool {
-//
-//	//found := false
-//	Peers.Rebalance()
-//	peerMap := Peers.Copy()
-//	//var peersToRemove []string
-//
-//	//list over peers and send them heartBeat
-//	//if len(peerMap) > 0 {
-//	for peer := range peerMap {
-//		//fmt.Println("\n\nin AskForBlock : req URL : ", peer+"/block/"+strconv.Itoa(int(height))+"/"+hash)
-//		resp, err := http.Get(peer + "/block/" + strconv.Itoa(int(height)) + "/" + hash)
-//		if err != nil {
-//			log.Println("Askblock Err 1 : ", err)
-//			log.Println("in AskForBlock - deleting peer : ", peer)
-//			Peers.Delete(peer)
-//			continue
-//
-//		} else {
-//			defer resp.Body.Close() //moved from above err check to here
-//
-//			body, err := ioutil.ReadAll(resp.Body) //blockJson
-//			if err != nil {
-//				log.Println("Askblock Err 2 : ", err)
-//				continue
-//			}
-//
-//			reqBlock := block.DecodeFromJSON(string(body))
-//			//fmt.Println("\n in AskForBlock : reqBlock", reqBlock, "\n")
-//
-//			if reqBlock.Header.Height == height && SBC.CheckParentHash(reqBlock){
-//				SBC.Insert(reqBlock)
-//				return true
-//			} else if SBC.CheckParentHash(reqBlock) {
-//				SBC.Insert(reqBlock)
-//			} else if reqBlock.Header.Height >= initialAskHeight {
-//				break
-//			}
-//
-//			AskForBlock(currentBCHeight, reqBlock.Header.ParentHash, blockHolder, currentBCHeight, initialAskHeight) // ask for parents parent block
-//
-//
-//		} // parsing responsed block
-//	} // looping peerlist
-//
-//	return false // if parent block not found
-//
-//}
-////
 
 // AskForBlock - Ask another server to return a block of certain height and hash
 func AskForBlock(height int32, hash string, blockHolder []block.Block) bool {
@@ -353,42 +366,17 @@ func AskForBlock(height int32, hash string, blockHolder []block.Block) bool {
 
 }
 
-// ForwardHeartBeat func forwards the receieved heartbeat to all its peers
-func ForwardHeartBeat(heartBeatData data.HeartBeatData) {
-
-	Peers.Rebalance()
-	peerMap := Peers.Copy()
-	hopCount := heartBeatData.Hops //to forward heartbeat
-	if hopCount > 0 {
-		heartBeatData.Hops--
-		heartBeatData.Id = Peers.GetSelfId()
-		heartBeatData.Addr = SELF_ADDR
-
-		//json, _ := json.Marshal(peerMap)
-		//heartBeatData.PeerMapJson = string(json)
-
-		//list over peers and send them heartBeat
-		if len(peerMap) > 0 {
-			for peer := range peerMap {
-				_, _ = http.Post(peer+"/heartbeat/receive", "application/json; charset=UTF-8",
-					strings.NewReader(heartBeatData.EncodeToJson()))
-			}
-		}
-	}
-
-}
-
 //StartHeartBeat func periodically sends heartbeatdata to peers
 func StartHeartBeat() {
 
 	for true {
 		Peers.Rebalance()
 		peerMap := Peers.Copy()
-		PeerMapJson, _ := Peers.PeerMapToJson() //apr4
-		//PeerMapJson, _ := data.PeerMapToJson(peerMap) //apr4
+		//PeerMapJson, _ := Peers.PeerMapToJson() //
+		PeerMapJson, _ := data.PeerMapToJson(peerMap) //apr4
 
 		//selfAddr := "http://localhost:" + os.Args[1] // SELF_ADDR
-		heartBeat := data.PrepareHeartBeatData(&SBC, Peers.GetSelfId(), PeerMapJson, SELF_ADDR)
+		heartBeat := data.PrepareHeartBeatData(&SBC, Peers.GetSelfId(), PeerMapJson, SELF_ADDR, false, "{}")
 
 		//list over peers and send them heartBeat
 		if len(peerMap) > 0 {
@@ -402,6 +390,83 @@ func StartHeartBeat() {
 			}
 		}
 		time.Sleep(10 * time.Second)
+	}
+}
+
+////          pow ///
+
+//StartTryingNonces func sends heartbeatdata with new block information to peers
+func StartTryingNonces() {
+
+	tryingNonces( /*parentHash ,&mpt, */ Difficulty)
+
+}
+
+// tryingNonces func tries to create a new block
+func tryingNonces( /*parentHash string, mpt *p1.MerklePatriciaTrie, */ difficulty int) {
+
+	// y = SHA3(parentHash + nonce + mptRootHash)
+
+	var parentBlock block.Block
+	var parentHash string
+	var mpt p1.MerklePatriciaTrie
+
+	GetNewParent = true
+	var nonce string
+
+	for {
+
+		if GetNewParent == true {
+			parentBlock = SBC.GetLatestBlocks()[0] //[rand.Int()%len(SBC.GetLatestBlocks())]//random parent from blocks at latest height
+			parentHash = parentBlock.Header.Hash
+			tryingForHeight = parentBlock.Header.Height + 1
+			fmt.Println("in tryingNonces : parentHash : ", parentHash)
+			mpt = p1.GenerateRandomMPT()
+			nonce = p4.InitializeNonce(8)
+
+			GetNewParent = false
+		}
+
+		if p4.POW(parentHash, nonce, mpt.Root, difficulty) {
+			//generate block send heartbeat (blockBeat)
+			SendBlockBeat(tryingForHeight, parentHash, nonce, mpt)
+
+			GetNewParent = true
+		}
+		nonce = p4.InitializeNonce(8) //NextNonce(Nonce)
+
+	}
+
+}
+
+// SendBlockBeat func prepares heartbeat data and sends across to peers
+func SendBlockBeat(height int32, parentHash string, nonce string, mpt p1.MerklePatriciaTrie) {
+
+	//log.Println("-------------------- sending MPT ROOT at height : ", mpt.Root)
+	//y := sha3.Sum256([]byte(parentHash + nonce + mpt.Root))
+	//y1 := hex.EncodeToString(y[:])
+	//log.Println("-------------------- sending proof : ", y1)
+
+	Peers.Rebalance()
+	peerMap := Peers.Copy()
+	PeerMapJson, _ := Peers.PeerMapToJson()
+
+	b1 := SBC.GenBlock(height, parentHash, mpt, nonce)
+	SBC.Insert(b1)
+	blockJson := block.EncodeToJSON(&b1)
+
+	heartBeat := data.PrepareHeartBeatData(&SBC, Peers.GetSelfId(), PeerMapJson, SELF_ADDR, true, blockJson)
+
+	//list over peers and send them heartBeat
+	if len(peerMap) > 0 {
+		for peer := range peerMap {
+			_, err := http.Post(peer+"/heartbeat/receive", "application/json; charset=UTF-8",
+				strings.NewReader(heartBeat.EncodeToJson())) //apr4
+			if err != nil {
+				Peers.Delete(peer)
+				//fmt.Println("deleting peer : ", peer)
+			}
+		}
 	}
 }
 

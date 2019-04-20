@@ -1,11 +1,12 @@
 package main
 
 import (
+	//"fmt"
+	"./p3"
 	"log"
 	"net/http"
 	"os"
-
-	"./p3"
+	//"./p1"
 )
 
 func main() {
@@ -30,8 +31,28 @@ func main() {
 // }
 
 //func main() {
+//
+////data.TestPeerListRebalance()
+////url := url(http://localhost:8080/block/height/hash)
+////p4.Show()
+//
+//	fmt.Println("Start")
+//
+//	//p4.BecomeFollower()
+//
+//
+//}
 
-//data.TestPeerListRebalance()
-//url := url(http://localhost:8080/block/height/hash)
-//p4.Show()
+//func main() {
+//	mpt := &p1.MerklePatriciaTrie{}
+//	mpt.Initial()
+//	fmt.Println("inserting do")
+//	mpt.Insert("do", "verb")
+//	fmt.Println("inserting dog")
+//	mpt.Insert("dog", "puppy")
+//	fmt.Println("inserting doge")
+//	mpt.Insert("doge", "coin")
+//	fmt.Println("inserting horse")
+//	mpt.Insert("horse", "stallion")
+//	fmt.Println(mpt.GetAllKeyValuePairs())
 //}

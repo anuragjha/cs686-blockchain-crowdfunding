@@ -11,17 +11,18 @@ import (
 )
 
 // Header struct defines the header of each block
-type Header struct {
+type Head struct {
 	Height     int32  //`json:"height"`
 	Timestamp  int64  //`json:"timestamp"`
 	Hash       string //`json:"hash"`
 	ParentHash string //`json:"parenthash"`
 	Size       int32  // `json:"parenthash"`
+	Nonce      string //'json:"nonce"'
 }
 
 // Block struct defines the block
 type Block struct {
-	Header Header                //`json:"header"`
+	Header Head                  //`json:"header"`
 	Value  p1.MerklePatriciaTrie //`json:"merklepatriciatrie"`
 }
 
@@ -32,17 +33,19 @@ type BlockJson struct {
 	Hash       string            `json:"hash"`
 	ParentHash string            `json:"parentHash"`
 	Size       int32             `json:"size"`
+	Nonce      string            `json:"nonce"`
 	MPT        map[string]string `json:"mpt"`
 }
 
 // Initial function a Block initializes the block for height, parentHash and Value
-func (block *Block) Initial(height int32, parentHash string, value p1.MerklePatriciaTrie) {
+func (block *Block) Initial(height int32, parentHash string, value p1.MerklePatriciaTrie, nonce string) {
 
 	block.Header.Timestamp = time.Now().Unix()
 	block.Header.Height = height
 	block.Header.ParentHash = parentHash
 	block.Value = value
 	block.Header.Size = int32(len([]byte(block.Value.String()))) // mpt converted to string and then to byte array
+	block.Header.Nonce = nonce
 	block.Header.Hash = block.Hash()
 
 }
@@ -51,23 +54,25 @@ func (block *Block) Initial(height int32, parentHash string, value p1.MerklePatr
 func DecodeFromJSON(jsonString string) Block {
 
 	// block := Block{}
-
 	blockJson := BlockJson{}
-	jerr := json.Unmarshal([]byte(jsonString), &blockJson)
-	if jerr != nil {
-		fmt.Println("block Err : ", jerr)
+
+	err := json.Unmarshal([]byte(jsonString), &blockJson)
+	if err != nil {
+		fmt.Println("DecodeFromJSON  in block.go : block Err : ", err)
 		return Block{}
 	}
-	return DecodeToBlock(blockJson.Height,
+	return DecodeToBlock(
+		blockJson.Height,
 		blockJson.Timestamp,
 		blockJson.Hash,
 		blockJson.ParentHash,
 		blockJson.Size,
+		blockJson.Nonce,
 		blockJson.MPT)
 }
 
 // DecodeToBlock func creates a type block from from all given parameters
-func DecodeToBlock(height int32, timestamp int64, hash string, parentHash string, size int32, keyValueMap map[string]string) Block {
+func DecodeToBlock(height int32, timestamp int64, hash string, parentHash string, size int32, nonce string, keyValueMap map[string]string) Block {
 
 	block := Block{}
 	block.Header.Height = height
@@ -75,6 +80,7 @@ func DecodeToBlock(height int32, timestamp int64, hash string, parentHash string
 	block.Header.Hash = hash
 	block.Header.ParentHash = parentHash
 	block.Header.Size = size
+	block.Header.Nonce = nonce
 
 	//creating mpt from key - value pairs
 	blockMPT := p1.MerklePatriciaTrie{}
@@ -83,7 +89,7 @@ func DecodeToBlock(height int32, timestamp int64, hash string, parentHash string
 		blockMPT.Insert(k, v)
 	}
 	block.Value = blockMPT
-
+	//fmt.Println("in DecodeToBlock of block.go : root : ", block.Value.Root)
 	return block
 }
 
@@ -96,25 +102,26 @@ func EncodeToJSON(block *Block) string {
 		Hash:       block.Header.Hash,
 		ParentHash: block.Header.ParentHash,
 		Size:       block.Header.Size,
+		Nonce:      block.Header.Nonce,
 		MPT:        block.Value.GetAllKeyValuePairs(),
 	}
 
-	jsonByteArray, jerr := json.Marshal(blockForJson)
-	jsonString := "{}"
-	if jerr == nil {
-		jsonString = string(jsonByteArray)
+	jsonByteArray, err := json.Marshal(blockForJson)
+	if err != nil {
+		return ""
 	}
-	return jsonString //empty jsonString if not encoded else some value
+	//jsonString = string(jsonByteArray)
+	return string(jsonByteArray) //empty jsonString if not encoded else some value
 }
 
 //Hash func takes an instance of block and hashes it
 //hash_str := string(b.Header.Height) + string(b.Header.Timestamp) + b.Header.ParentHash +
-//     b.Value.Root + string(b.Header.Size)
+//     b.Value.Root + string(b.Header.Size) + block.Header.Nonce
 func (block *Block) Hash() string {
 	var hashStr string
 
 	hashStr = string(block.Header.Height) + string(block.Header.Timestamp) + string(block.Header.ParentHash) +
-		string(block.Value.Root) + string(block.Header.Size)
+		string(block.Value.Root) + string(block.Header.Size) + block.Header.Nonce
 
 	sum := sha3.Sum256([]byte(hashStr))
 	return "HashStart_" + hex.EncodeToString(sum[:]) + "_HashEnd"

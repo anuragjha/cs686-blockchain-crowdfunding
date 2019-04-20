@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 
 	"golang.org/x/crypto/sha3"
 
@@ -71,6 +72,32 @@ func (blockchain *Blockchain) Insert(block block.Block) {
 
 }
 
+// Insert func takes a block, use the height to insert blockhash , but ignore if hash alrady present
+func (blockchain *Blockchain) UnsafeInsert(block block.Block) {
+
+	blockHeight := block.Header.Height
+	//isValidBlock := false
+	//fmt.Println("in insert of blockchain::\tblock height: ", blockHeight)
+
+	if blockchain.Length == 0 && blockHeight == 1 && block.Header.ParentHash == "genesis" {
+		/*isValidBlock = */ genesis(blockchain, block, blockHeight)
+		//fmt.Println("blockHeight == 1)
+	} else if blockHeight > 0 && blockHeight <= blockchain.Length { //adding fork
+		/*isValidBlock = */ addFork(blockchain, block, blockHeight)
+		//fmt.Println("blockHeight < blockchain.Length")
+	} else if blockHeight > 0 && blockHeight >= blockchain.Length+1 { //can be any height greater than chain length
+		/*isValidBlock = */ addLength(blockchain, block, blockHeight)
+		//fmt.Println("blockHeight == blockchain.Length")
+	}
+
+	//if isValidBlock == true {
+	//	fmt.Println("block added to blockchain :-) : ", block.Header.Hash, " at height : ", block.Header.Height)
+	//} else {
+	//	fmt.Println("block will not be added to blockchain :-( : ", block.Header.Hash, " at height : ", block.Header.Height)
+	//}
+
+}
+
 //genesis func creates the 1st block of blockchain
 func genesis(blockchain *Blockchain, block block.Block, blockHeight int32) bool {
 	blockchain.Chain[blockHeight] = append(blockchain.Chain[blockHeight], block)
@@ -97,10 +124,7 @@ func addFork(blockchain *Blockchain, block block.Block, blockHeight int32) bool 
 	for i := range blockList {
 		if reflect.DeepEqual(blockList[i].Header.Hash, block.Header.Hash) {
 			isBlockCorrect = false
-			//fmt.Println("BLOCK will not be added as blockList[i].Header.Hash == block.Header.Hash - therefore"+
-			//	" duplicate - at height : ", blockHeight)
-			//fmt.Println("blockList[i].Header.Hash = ", blockList[i].Header.Hash)
-			//fmt.Println("block.Header.Hash = ", block.Header.Hash)
+			//fmt.Println("BLOCK will not be added as duplicate - at height : ", blockHeight)
 			break
 		}
 	}
@@ -157,16 +181,33 @@ func DecodeFromJSON(blockchain *Blockchain, jsonString string) {
 	}
 }
 
-func (bc *Blockchain) Show() string {
+//GetLatestBlocks
+func (blockchain *Blockchain) GetLatestBlocks() []block.Block {
+	return blockchain.Chain[blockchain.Length]
+}
+
+func (blockchain *Blockchain) GetParentBlock(blk block.Block) block.Block {
+	if blocks, ok := blockchain.Get(blk.Header.Height - 1); ok {
+		for _, pblk := range blocks {
+			if reflect.DeepEqual(pblk.Header.Hash, blk.Header.ParentHash) {
+				return pblk
+			}
+		}
+	}
+	return block.Block{}
+
+}
+
+func (blockchain *Blockchain) Show() string {
 	rs := ""
 	var idList []int
-	for id := range bc.Chain {
+	for id := range blockchain.Chain {
 		idList = append(idList, int(id))
 	}
 	sort.Ints(idList)
 	for _, id := range idList {
 		var hashs []string
-		for _, block := range bc.Chain[int32(id)] {
+		for _, block := range blockchain.Chain[int32(id)] {
 			hashs = append(hashs, block.Header.Hash+"<="+block.Header.ParentHash)
 		}
 		sort.Strings(hashs)
@@ -178,5 +219,32 @@ func (bc *Blockchain) Show() string {
 	}
 	sum := sha3.Sum256([]byte(rs))
 	rs = fmt.Sprintf("This is the BlockChain: %s\n", hex.EncodeToString(sum[:])) + rs
+	return rs
+}
+
+func (blockchain *Blockchain) ShowCanonical() string {
+	rs := ""
+	var idList []int
+	for id := range blockchain.Chain {
+		idList = append(idList, int(id))
+	}
+
+	sort.Sort(sort.Reverse(sort.IntSlice(idList)))
+	for _, id := range idList {
+		var hashs []string
+		for _, block := range blockchain.Chain[int32(id)] {
+			hashs = append(hashs, "height="+strconv.Itoa(int(block.Header.Height))+
+				", timestamp="+strconv.Itoa(int(block.Header.Timestamp))+
+				", hash="+block.Header.Hash+
+				", parentHash="+block.Header.ParentHash+
+				", size="+strconv.Itoa(int(block.Header.Size)))
+		}
+		sort.Strings(hashs)
+		for _, h := range hashs {
+			rs += fmt.Sprintf("%s, ", h)
+		}
+		rs += "\n"
+	}
+
 	return rs
 }

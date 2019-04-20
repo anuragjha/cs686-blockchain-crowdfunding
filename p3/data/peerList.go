@@ -152,13 +152,12 @@ func (peers *PeerList) Register(id int32) {
 func (peers *PeerList) Copy() map[string]int32 {
 
 	peers.mux.Lock()
+	defer peers.mux.Unlock()
 
 	copyOfPeerMap := make(map[string]int32)
 	for k := range peers.peerMap {
 		copyOfPeerMap[k] = peers.peerMap[k]
 	}
-
-	peers.mux.Unlock()
 
 	return copyOfPeerMap
 }
@@ -185,9 +184,9 @@ func (peers *PeerList) PeerMapToJson() (string, error) {
 }
 
 //PeerMapToJson func returns a json string of PeerMap or an error
-func PeerMapToJson(peersmap map[string]int32) (string, error) {
+func PeerMapToJson(peermap map[string]int32) (string, error) {
 
-	jsonOfPeerMap, err := json.Marshal(peersmap)
+	jsonOfPeerMap, err := json.Marshal(peermap)
 
 	return string(jsonOfPeerMap), err
 }
