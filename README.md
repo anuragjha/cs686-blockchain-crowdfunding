@@ -4,18 +4,17 @@
 # Registration
 1. new data structs in security.go (*1*)
   - Identity {
-      privateKey
-      PublicKey
-      HashForKey
-      Label
-  
-  }
+      privateKey,
+      PublicKey,
+      HashForKey,
+      Label,
+      }
   
   - PublicIdentity {
-      PublicKey
-      HashForKey
-      Label
-  }
+      PublicKey,
+      HashForKey,
+      Label,
+      }
 
 2. new data struct in PeerList
   - added to contain secureId of dataType Identity.
