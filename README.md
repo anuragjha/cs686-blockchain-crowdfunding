@@ -29,13 +29,19 @@ GetPublicIdentity in security.go - for Node to be able to get its PublicId in ne
 
 
 (*1*)
-# security.go
+## security.go
 Implements the public-private keys and Hash generation. Also creating signature and verifying signature.
-Contains two data structs - Identity and PublicIdentity (should have json converion and back only for PublicIdentity)
+Contains two data structs - Identity and PublicIdentity.
 
 
 
-# API
+## API
 GET /uploadpids - to be used first time along with download blockchain.
 
 HeartBeat send and Receieve now additionally deals with Signature of sender and its verification by receiever.
+
+
+# Currency
+
+
+
