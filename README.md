@@ -62,14 +62,14 @@ Have to add functionality to send encrypted blockjson and decrypt blockjson - in
 
 
 # (2) Currency
+Peers have 1000 default for now.
+They can create tx, the tx then goes to tx pool.
+Txs are picked by a peer from Tx pool.
+Tx remain in pool until it is part of canonical chain
 
-1. Data structs in wallet.go
-  - Wallet {
-    Balance,
-  }
-  
-2. Data structs in transaction.go
-  - Transaction {
+## transaction.go
+Data structs in transaction.go
+  1) Transaction {
     Id
     From
     To
@@ -77,27 +77,50 @@ Have to add functionality to send encrypted blockjson and decrypt blockjson - in
     Timestamp
   }
 
-  - TransactionPool {
+  2) TransactionPool {
      list of transaction
   }
 
-  - TransactionBeat {
+  3) TransactionBeat {
       Transaction
       FromPid
       TxSig
   }
 
-## transaction.go
+Funcs ->
 CreateTransaction func -> takes params From public Id, To public Id, Tokens and Timestamp and -> returns Tx.
 NewTransactionBeat func -> takes params Tx, From public Id and FromSig and -> returns TransactionBeat.
 CreateTransactionBeat func ->  takes params Tx and Identity and -> returns 
-AddToTransactionPool func -> 
-DeleteFromTransactionPool func ->
-ReadFromTransactionPool func ->
+AddToTransactionPool func -> takes a transaction and adds it to TransactionPool
+DeleteFromTransactionPool func -> takes transaction id and deletes it from TransactionPool
+ReadFromTransactionPool func -> takes in no. of tx to read and returns txmap of as many txs.
 
 
 
 
+## wallet.go
+Data structs in wallet.go
+  - Wallet {
+    Balance, - map[string]float64
+    mutex,
+  }
+  where Balance is map of unit and currency amt.
+  
+## balanceBook.go
+Data structs in balanceBook.go
+  - BalanceBook {
+    Book, - mpt
+    mutex,
+  }
+
+
+Funcs ->
+UpdateBalanceBook
+GetBalance
+IsBalanceEnough
+
+## handlers.go
+Add data structs to Keep Balance, 
 
 
 
