@@ -38,14 +38,18 @@ Using golang rsa PKCS1v15 to sign and verify and encrypt and decrypt.
    Pid
    SignForBlockJson - for BlockJson
    PeerMapPidJson  
-   ### Todo - sender have to encrypt the heartbeat with public key of receving peers, Receiever have to decrypt the heartbeat with private key of itself.
 
 ## handlers.go
-in StartHeartBeat func - 
+### Todo - sender have to encrypt the heartbeat with public key of receving peers, Receiever have to decrypt the heartbeat with private key of itself. - testing left
+1) In StartHeartBeat func - AND - In SendBlockBeat func -
 Add new params to PrepareHeartBeatData func call
     add signature for blockjson
     add Pid of Sender
 Add Encrypt heartbeat with public key of "to whom the heartbeat is being sent". (in for loop)
+
+2)In HeartBeatReceive func -
+Add Decrypt heartbeat as soon as receieved
+
 
 
 ## API
