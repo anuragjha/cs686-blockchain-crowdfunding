@@ -25,6 +25,12 @@ var routes = Routes{
 		Upload,
 	},
 	Route{
+		"Upload",
+		"GET",
+		"/uploadpids",
+		UploadPids,
+	},
+	Route{
 		"UploadBlock",
 		"GET",
 		"/block/{height}/{hash}",
@@ -47,5 +53,11 @@ var routes = Routes{
 		"GET",
 		"/canonical",
 		Canonical,
+	},
+	Route{
+		"Transaction",
+		"POST",
+		"/transaction",
+		Transaction,
 	},
 }

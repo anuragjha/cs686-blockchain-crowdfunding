@@ -5,18 +5,24 @@ import (
 	"container/ring"
 	"encoding/json"
 	"fmt"
+	"log"
 	"reflect"
 	"sort"
 	"strconv"
+
+	//"strconv"
+	"../../p5"
 	"sync"
 )
 
 //PeerList contains selfId, peerMap, max length, and a mutex
 type PeerList struct {
-	selfId    int32
-	peerMap   map[string]int32
-	maxLength int32
-	mux       sync.Mutex
+	selfId     int32
+	secureId   p5.Identity //p5
+	peerMap    map[string]int32
+	peerMapPid map[string]p5.PublicIdentity
+	maxLength  int32
+	mux        sync.Mutex
 }
 
 ///////////
@@ -55,12 +61,14 @@ func sortMapByValue(m map[string]int32) PairList {
 ///////////
 
 //NewPeerList func creates a New PeerList for a id and maxLength
-func NewPeerList(id int32, maxLength int32) PeerList {
+func NewPeerList(id int32, sid p5.Identity, maxLength int32) PeerList {
 
 	return PeerList{
-		selfId:    id,
-		peerMap:   make(map[string]int32),
-		maxLength: maxLength,
+		selfId:     id,
+		secureId:   sid,
+		peerMap:    make(map[string]int32),
+		peerMapPid: make(map[string]p5.PublicIdentity),
+		maxLength:  maxLength,
 	}
 }
 
@@ -72,6 +80,14 @@ func (peers *PeerList) Add(addr string, id int32) {
 	peers.peerMap[addr] = id
 }
 
+//Add func adds a peer with addr and id to peerMap
+func (peers *PeerList) AddPid(addr string, id p5.PublicIdentity) {
+	peers.mux.Lock()
+	defer peers.mux.Unlock()
+
+	peers.peerMapPid[addr] = id
+}
+
 //Delete func deletes a peer with specific addr
 func (peers *PeerList) Delete(addr string) {
 	peers.mux.Lock()
@@ -79,6 +95,14 @@ func (peers *PeerList) Delete(addr string) {
 
 	delete(peers.peerMap, addr)
 }
+
+////Delete func deletes a peer with specific addr
+//func (peers *PeerList) DeletePid(addr string) {
+//	peers.mux.Lock()
+//	defer peers.mux.Unlock()
+//
+//	delete(peers.peerMapPid, addr)
+//}
 
 //Rebalance func changes the PeerMap to contain take maxLength(32) closest peers (by Id)
 func (peers *PeerList) Rebalance() {
@@ -142,11 +166,23 @@ func (peers *PeerList) Show() string {
 	return buffer.String()
 }
 
-//Register func assigns a value to selfId
-func (peers *PeerList) Register(id int32) {
-	peers.selfId = id
-	fmt.Printf("SelfId=%v\n", id)
+//Show func returns PeerMap string
+func (peers *PeerList) ShowPids() string {
+	var buffer bytes.Buffer
+
+	buffer.WriteString("This is PeerMapPid:\n")
+	for k := range peers.peerMapPid {
+		buffer.WriteString("Addr:" + k + " Pid PubK : " + peers.peerMapPid[k].PublicKey.N.String() + "\n" +
+			"Pid Label : " + peers.peerMapPid[k].Label + "\n")
+	}
+	return buffer.String()
 }
+
+////Register func assigns a value to selfId
+//func (peers *PeerList) Register(id int32) {
+//	peers.selfId = id
+//	fmt.Printf("SelfId=%v\n", id)
+//}
 
 //Copy func returns a copy of the peerMap
 func (peers *PeerList) Copy() map[string]int32 {
@@ -162,15 +198,24 @@ func (peers *PeerList) Copy() map[string]int32 {
 	return copyOfPeerMap
 }
 
+//Copy func returns a copy of the peerMap
+func (peers *PeerList) CopyPids() map[string]p5.PublicIdentity {
+
+	peers.mux.Lock()
+	defer peers.mux.Unlock()
+
+	copyOfPeerMapPid := make(map[string]p5.PublicIdentity)
+	for k := range peers.peerMapPid {
+		copyOfPeerMapPid[k] = peers.peerMapPid[k]
+	}
+
+	return copyOfPeerMapPid
+}
+
 //GetSelfId func returns selfId of Peer
 func (peers *PeerList) GetSelfId() int32 {
 	return peers.selfId
 }
-
-// //GetSelfAddr func returns selfId of Peer
-// func (peers *PeerList) GetSelfId() int32 {
-// 	return peers.selfId
-// }
 
 //PeerMapToJson func returns a json string of PeerMap or an error
 func (peers *PeerList) PeerMapToJson() (string, error) {
@@ -191,6 +236,25 @@ func PeerMapToJson(peermap map[string]int32) (string, error) {
 	return string(jsonOfPeerMap), err
 }
 
+//PeerMapToJson func returns a json string of PeerMap or an error
+func (peers *PeerList) PeerMapPidToJson() (string, error) {
+	peers.mux.Lock()
+
+	jsonOfPeerMapPid, err := json.Marshal(peers.peerMapPid)
+
+	peers.mux.Unlock()
+
+	return string(jsonOfPeerMapPid), err
+}
+
+//PeerMapSIDToJson func returns a json string of PeerMap or an error
+func PeerMapPidToJson(peerMapPid map[string]p5.PublicIdentity) (string, error) {
+
+	jsonOfPeerMapPid, err := json.Marshal(peerMapPid)
+
+	return string(jsonOfPeerMapPid), err
+}
+
 //InjectPeerMapJson func injects the new PeerMap into existing PeerMap, except for the entry corresponding to self
 func (peers *PeerList) InjectPeerMapJson(peerMapJsonStr string, selfAddr string) {
 
@@ -209,41 +273,60 @@ func (peers *PeerList) InjectPeerMapJson(peerMapJsonStr string, selfAddr string)
 	}
 }
 
+//InjectPeerMapJson func injects the new PeerMap into existing PeerMap, except for the entry corresponding to self
+func (peers *PeerList) InjectPeerMapPidJson(peerMapPidJsonStr string, selfAddr string) {
+
+	var recvPeerMapPid map[string]p5.PublicIdentity
+	err := json.Unmarshal([]byte(peerMapPidJsonStr), &recvPeerMapPid)
+	if err == nil {
+		//peerMapPidCopy := peers.CopyPids()
+		for addr, pid := range recvPeerMapPid {
+			if _, ok := peers.peerMapPid[addr]; !ok {
+				peers.mux.Lock()
+				peers.peerMapPid[addr] = pid
+				peers.mux.Unlock()
+			}
+		}
+	} else {
+		log.Println("Error in Inject PeerMapPidJson : err : ", err)
+	}
+}
+
 func TestPeerListRebalance() {
-	peers := NewPeerList(5, 4)
+	peers := NewPeerList(5, p5.Identity{}, 4)
 	peers.Add("1111", 1)
 	peers.Add("4444", 4)
 	peers.Add("-1-1", -1)
 	peers.Add("0000", 0)
 	peers.Add("2121", 21)
 	peers.Rebalance()
-	expected := NewPeerList(5, 4)
+	expected := NewPeerList(5, p5.Identity{}, 4)
 	expected.Add("1111", 1)
 	expected.Add("4444", 4)
 	expected.Add("2121", 21)
 	expected.Add("-1-1", -1)
 	fmt.Println(reflect.DeepEqual(peers, expected))
 
-	peers = NewPeerList(5, 2)
+	peers = NewPeerList(5, p5.Identity{}, 2)
 	peers.Add("1111", 1)
 	peers.Add("4444", 4)
 	peers.Add("-1-1", -1)
 	peers.Add("0000", 0)
 	peers.Add("2121", 21)
 	peers.Rebalance()
-	expected = NewPeerList(5, 2)
+	expected = NewPeerList(5, p5.Identity{}, 2)
 	expected.Add("4444", 4)
 	expected.Add("2121", 21)
 	fmt.Println(reflect.DeepEqual(peers, expected))
 
-	peers = NewPeerList(5, 4)
+	peers = NewPeerList(5, p5.Identity{}, 4)
 	peers.Add("1111", 1)
 	peers.Add("7777", 7)
 	peers.Add("9999", 9)
 	peers.Add("11111111", 11)
 	peers.Add("2020", 20)
 	peers.Rebalance()
-	expected = NewPeerList(5, 4)
+	expected = NewPeerList(5, p5.Identity{}, 4)
 	expected.Add("1111", 1)
 	expected.Add("7777", 7)
 	expected.Add("9999", 9)

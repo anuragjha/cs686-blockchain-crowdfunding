@@ -18,6 +18,7 @@ import (
 	"../p2/block"
 	//"../p2"
 	"../p4"
+	"../p5"
 	"./data"
 )
 
@@ -29,6 +30,7 @@ var INIT_SERVER = "http://localhost:6686"
 
 //SELF_ADDR var BC_DOWNLOAD_SERVER = TA_SERVER + "/upload"
 var BC_DOWNLOAD_SERVER = INIT_SERVER + "/upload"
+var PID_DOWNLOAD_SERVER = INIT_SERVER + "/uploadpids"
 
 //changes in init for arg of port provided
 var SELF_ADDR = "http://localhost:6686"
@@ -47,16 +49,23 @@ const Difficulty = 5
 
 var ifStarted bool
 
+var SID p5.Identity
+var BalanceBook p1.MerklePatriciaTrie
+var Wallet p5.Wallet
+
 func init() {
 	// This function will be executed before everything else.
 
 	//init coz node not removed from peerlist and receieve heartbeat even before it start()s
-	id := Register()
-	Peers = data.NewPeerList(id, 32)
+	//id := Register()
+	//Peers = data.NewPeerList(id, SID,32)
 
 	SELF_ADDR = SELF_ADDR_PREFIX + os.Args[1]
 	fmt.Println("Node : ", SELF_ADDR)
-	//ifStarted = false
+
+	//init BalanceBook
+
+	//init wallet
 
 }
 
@@ -66,23 +75,29 @@ func Start(w http.ResponseWriter, r *http.Request) {
 	if ifStarted == false {
 		ifStarted = true
 
-		id := Register()                 //register ID
-		Peers = data.NewPeerList(id, 32) //initialize PeerList // 32 sunnit
-		SBC = data.NewBlockChain()       //create new Block chain //apr4
+		id := Register()                      //register ID
+		Peers = data.NewPeerList(id, SID, 32) //initialize PeerList // 32 sunnit
 
-		if Peers.GetSelfId() == 6686 {
+		Peers.AddPid(SELF_ADDR, SID.GetMyPublicIdentity()) //p5
+
+		SBC = data.NewBlockChain() //create new Block chain //apr4
+
+		if strings.Compare(SELF_ADDR, INIT_SERVER) == 0 {
+			fmt.Println("Generating Genesis block")
 			mpt := p1.MerklePatriciaTrie{}
 			mpt.Insert("First Message", "Anurag's blockchain")
 			nonce := p4.FindNonce("genesis", &mpt, Difficulty)
 			b1 := SBC.GenBlock(1, "genesis", mpt, nonce)
 			SBC.Insert(b1)
+
 		}
 
 		//if Peers.GetSelfId() != 6686 { //download if not 6686
 		if SELF_ADDR != INIT_SERVER {
 
 			Peers.Add(INIT_SERVER, int32(6686)) // add Init server to peer list of node
-			Download()                          //download BlockChain //apr4 - remove it after testing
+			Download()                          //download BlockChain
+			DownloadPeerMapPid()
 		}
 
 		//start HearBeat
@@ -90,7 +105,7 @@ func Start(w http.ResponseWriter, r *http.Request) {
 		go StartTryingNonces() //pow
 	}
 	w.WriteHeader(200)
-	_, err := w.Write([]byte("started"))
+	_, err := w.Write([]byte("started : " + SELF_ADDR + "\n Pid : \n" + Peers.ShowPids()))
 	if err != nil {
 		log.Println("Err -  in start - during writing to client")
 	}
@@ -99,7 +114,7 @@ func Start(w http.ResponseWriter, r *http.Request) {
 
 //Show func -  Display peerList and sbc
 func Show(w http.ResponseWriter, r *http.Request) {
-	_, err := fmt.Fprintf(w, "%s\n%s", Peers.Show(), SBC.Show())
+	_, err := fmt.Fprintf(w, "%s\n%s\n%s", Peers.Show(), Peers.ShowPids(), SBC.Show())
 	if err != nil {
 		log.Println("Err in show func while writing response")
 	}
@@ -124,16 +139,6 @@ func Canonical(w http.ResponseWriter, r *http.Request) {
 // Register to TA's server, get an ID
 func Register() int32 {
 
-	// resp, err := http.Get(REGISTER_SERVER)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// defer resp.Body.Close()
-
-	// body, err := ioutil.ReadAll(resp.Body)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
 	body := os.Args[1]
 
 	id, err := strconv.Atoi(string(body))
@@ -141,6 +146,8 @@ func Register() int32 {
 		log.Fatal(err)
 		return 0
 	}
+
+	SID = p5.NewIdentity(body)
 
 	return int32(id)
 }
@@ -162,6 +169,23 @@ func Download() {
 	SBC.UpdateEntireBlockChain(string(body))
 }
 
+func DownloadPeerMapPid() {
+	resp, err := http.Get(PID_DOWNLOAD_SERVER)
+	//resp, err := http.Get("http://localhost:6686/uploadpids/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body) //blockChainJson
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//SBC.UpdateEntireBlockChain(string(body))
+	Peers.InjectPeerMapPidJson(string(body), SELF_ADDR)
+}
+
 // Upload blockchain to whoever called this method, return jsonStr
 func Upload(w http.ResponseWriter, r *http.Request) {
 	blockChainJson, err := SBC.BlockChainToJson()
@@ -173,6 +197,19 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 
 	//remove comments above after testing
 	//UploadGenesis(w, r)
+}
+
+// Upload blockchain to whoever called this method, return jsonStr
+func UploadPids(w http.ResponseWriter, r *http.Request) {
+
+	copyPids := Peers.CopyPids()
+	peerMapPidJson, err := data.PeerMapPidToJson(copyPids) //SBC.BlockChainToJson()
+	if err != nil {
+		//data.PrintError(err, "Upload") // todo
+		log.Println("Err - in Upload func")
+	}
+	fmt.Fprint(w, peerMapPidJson)
+
 }
 
 // Upload genesis blockchain to whoever called this method, return jsonStr
@@ -230,21 +267,38 @@ func HeartBeatReceive(w http.ResponseWriter, r *http.Request) {
 	} else {
 		defer r.Body.Close()
 
-		//heartBeat := data.DecodeToHeartBeatData(string(body)) // heartBeat struct
+		heartBeat := data.DecodeToHeartBeatData(string(body)) // heartBeat struct
+
+		if signVerified(heartBeat) { //p5
+			fmt.Println("Sign verified :-)")
+		} else {
+			fmt.Println("Sign NOT verified :-(")
+			fmt.Println("sig recv : ", heartBeat.SignForBlockJson)
+		}
 
 		go processHeartBeat(data.DecodeToHeartBeatData(string(body))) // process for the receieved heartbeat
 
 		go forwardHeartBeat(data.DecodeToHeartBeatData(string(body))) // forward the heartBeat // here sunnit
+
 	}
 
+}
+
+func signVerified(heartBeat data.HeartBeatData) bool {
+
+	senderPid := p5.PublicIdentity(heartBeat.Pid)
+	//senderHashForKey := p5.GenerateHashForKey(senderPid.Label)
+	isMatch := p5.VerifySingature(senderPid.PublicKey, []byte(heartBeat.BlockJson), []byte(heartBeat.SignForBlockJson))
+	return isMatch
 }
 
 // processHeartBeat func updates the peerlist, and IfNewBlock then insert the block in SBC
 func processHeartBeat(heartBeat data.HeartBeatData) {
 
-	//use hearBeatData to update peer list and get block if the ifNew is set to true
-	updatePeerList(&heartBeat)
+	//use hearBeatData to update peer list
+	updatePeerList(&heartBeat) //updates PeerMap and PeerMapPid //p5
 
+	//and get block if the IfNewBlock is set to true
 	if heartBeat.IfNewBlock { //add block in blockchain
 
 		newBlock := block.DecodeFromJSON(heartBeat.BlockJson)
@@ -268,7 +322,7 @@ func processHeartBeat(heartBeat data.HeartBeatData) {
 				SBC.Insert(newBlock) // if parentHash exist then directly insert and POW is satisfied
 
 			} else if AskForBlock(newBlock.Header.Height-1, newBlock.Header.ParentHash, make([]block.Block, 0) /*, SBC.GetLength(), newBlock.Header.Height-1*/) {
-				//if parent cannot be found then ask for parent block and insert both
+				//if parent cannot be found then ask for parent blocks and insert all parent then insert newBlock
 				SBC.Insert(newBlock)
 				//AskForBlock(newBlock.Header.Height, newBlock.Header.ParentHash, make([]block.Block, 0), SBC.GetLength()+1, newBlock.Header.Height+1)
 
@@ -289,6 +343,8 @@ func forwardHeartBeat(heartBeatData data.HeartBeatData) {
 	if hopCount > 0 {
 		heartBeatData.Hops--
 		heartBeatData.Id = Peers.GetSelfId()
+		heartBeatData.Pid = SID.GetMyPublicIdentity()
+		heartBeatData.SignForBlockJson = SID.GenSignature([]byte(heartBeatData.BlockJson))
 		heartBeatData.Addr = SELF_ADDR
 
 		//json, _ := json.Marshal(peerMap)
@@ -309,6 +365,9 @@ func forwardHeartBeat(heartBeatData data.HeartBeatData) {
 func updatePeerList(heartBeat *data.HeartBeatData) {
 	Peers.Add(heartBeat.Addr, heartBeat.Id)
 	Peers.InjectPeerMapJson(heartBeat.PeerMapJson, SELF_ADDR)
+
+	Peers.AddPid(heartBeat.Addr, heartBeat.Pid) //p5
+	Peers.InjectPeerMapPidJson(heartBeat.PeerMapPidJson, SELF_ADDR)
 }
 
 // AskForBlock - Ask another server to return a block of certain height and hash
@@ -375,8 +434,16 @@ func StartHeartBeat() {
 		//PeerMapJson, _ := Peers.PeerMapToJson() //
 		PeerMapJson, _ := data.PeerMapToJson(peerMap) //apr4
 
+		peerMapPid := Peers.CopyPids()
+		PeerMapPidJson, err := data.PeerMapPidToJson(peerMapPid) //p5
+		if err != nil {
+			fmt.Println("in StartHeartBeat, Error in Converting PeerMapPid to json : err - ", err)
+		}
+
 		//selfAddr := "http://localhost:" + os.Args[1] // SELF_ADDR
-		heartBeat := data.PrepareHeartBeatData(&SBC, Peers.GetSelfId(), PeerMapJson, SELF_ADDR, false, "{}")
+
+		//func PrepareHeartBeatData(sbc *SyncBlockChain, selfId int32, selfSid p5.PublicIdentity, peerMapBase64 string, peerMapSIDBase64 string, addr string, makingNew bool, newBlockJson string, signForBlockJson string) HeartBeatData
+		heartBeat := data.PrepareHeartBeatData(&SBC, Peers.GetSelfId(), SID.GetMyPublicIdentity(), PeerMapJson, PeerMapPidJson, SELF_ADDR, false, "{}", SID.GenSignature([]byte("{}")))
 
 		//list over peers and send them heartBeat
 		if len(peerMap) > 0 {
@@ -455,7 +522,15 @@ func SendBlockBeat(height int32, parentHash string, nonce string, mpt p1.MerkleP
 	SBC.Insert(b1)
 	blockJson := block.EncodeToJSON(&b1)
 
-	heartBeat := data.PrepareHeartBeatData(&SBC, Peers.GetSelfId(), PeerMapJson, SELF_ADDR, true, blockJson)
+	peerMapPid := Peers.CopyPids()
+	PeerMapPidJson, err := data.PeerMapPidToJson(peerMapPid) //p5
+	if err != nil {
+		log.Println("in sendBlockBeat, Error in converting peerMapPid to json : err - ", err)
+	}
+
+	signForBlockJson := SID.GenSignature([]byte(blockJson))
+
+	heartBeat := data.PrepareHeartBeatData(&SBC, Peers.GetSelfId(), SID.GetMyPublicIdentity(), PeerMapJson, PeerMapPidJson, SELF_ADDR, true, blockJson, signForBlockJson)
 
 	//list over peers and send them heartBeat
 	if len(peerMap) > 0 {
@@ -480,4 +555,8 @@ func returnCode500(w http.ResponseWriter, r *http.Request) {
 func returnCode204(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Block does not exists", http.StatusNoContent)
 	http.Error(w, http.StatusText(http.StatusNoContent), http.StatusNoContent)
+}
+
+func Transaction(w http.ResponseWriter, r *http.Request) { //todo
+
 }

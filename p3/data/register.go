@@ -4,12 +4,12 @@ import "encoding/json"
 
 //RegisterData struct defines the AssignedId and PeerMapJson to a struct
 type RegisterData struct {
-	AssignedId  int32  `json:"assignedId"`
+	AssignedId  string `json:"assignedId"`
 	PeerMapJson string `json:"peerMapJson"`
 }
 
 //NewRegisterData func creates a new RegsterData
-func NewRegisterData(id int32, peerMapJson string) RegisterData {
+func NewRegisterData(id string, peerMapJson string) RegisterData {
 	return RegisterData{
 		AssignedId:  id,
 		PeerMapJson: peerMapJson,
