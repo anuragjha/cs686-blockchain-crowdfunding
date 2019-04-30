@@ -1,4 +1,4 @@
-# cs686_BlockChain_P5 - Lending system
+# cs686_BlockChain_P5 - Lending system (such as crowd funding platform)
 
 
 # (1) Crypto 
@@ -22,22 +22,30 @@ Using golang rsa PKCS1v15 to sign and verify and encrypt and decrypt.
       Label,
       }
 
-2. new data struct in PeerList
-  secureId - added to contain secureId of dataType Identity.
-  peerMapPid - now also contains PeerMapPid
-  PeerMapPid is a Map of - Addr of Node (key) - and PublicIdentity (value) of peers.
+## peerlist.go
+ PeerList - new variables in struct
+  secureId    - added to contain secureId of dataType Identity.
+  peerMapPid  - now also contains PeerMapPid
+  PeerMapPid  - a Map of - Addr of Node (key) - and PublicIdentity (value) of peers.
+  
+  Methods added - 
+  InjectPeerMapPidJson method - to inject receieved pidJson in receiever map
+  And other methods relating PeerMapPid, parallel in logic with PeerMap
+  ### Todo - merge logic of processing PeerMap and PeerMapPid 
 
 ## heartbeat.go
  HeartBeat changed to now also include
    Pid
    SignForBlockJson - for BlockJson
    PeerMapPidJson  
-   ## Todo - sender have to encrypt the heartbeat with public key of receving peers, Receiever have to decrypt the heartbeat with private key of itself.
+   ### Todo - sender have to encrypt the heartbeat with public key of receving peers, Receiever have to decrypt the heartbeat with private key of itself.
 
 ## handlers.go
-Add functionality in creating heartBeat
-add signature for blockjson
-add Pid of Sender
+in StartHeartBeat func - 
+Add new params to PrepareHeartBeatData func call
+    add signature for blockjson
+    add Pid of Sender
+Add Encrypt heartbeat with public key of "to whom the heartbeat is being sent". (in for loop)
 
 
 ## API
