@@ -68,8 +68,10 @@ Have to add functionality to send encrypted blockjson and decrypt blockjson - in
 ## transaction.go
 CreateTransaction func -> takes params From public Id, To public Id, Tokens and Timestamp and -> returns Tx.
 NewTransactionBeat func -> takes params Tx, From public Id and FromSig and -> returns TransactionBeat.
-
-
+CreateTransactionBeat func ->  takes params Tx and Identity and -> returns 
+AddToTransactionPool func ->
+DeleteFromTransactionPool func ->
+ReadFromTransactionPool func ->
 
 
 
