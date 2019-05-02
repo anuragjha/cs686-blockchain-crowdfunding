@@ -161,7 +161,9 @@ And Lending amt is kept there until it is ready for use by borrowers.
 ## API
 
 GET /ShowWallet
+
 GET /ShowBalanceBook
+
 GET /ShowTransactionPool
 
 POST /transaction
