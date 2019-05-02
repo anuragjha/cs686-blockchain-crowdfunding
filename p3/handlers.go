@@ -594,10 +594,6 @@ func ShowTransactionPool(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func TransactionBeatRecv(w http.ResponseWriter, r *http.Request) { //todo
-
-}
-
 func Transaction(w http.ResponseWriter, r *http.Request) { //todo
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -609,11 +605,66 @@ func Transaction(w http.ResponseWriter, r *http.Request) { //todo
 
 	tx := p5.DecodeToTransaction(body)
 
-	//todo - check if transaction is valid
+	//check if transaction is valid
+	if p5.IsTransactionValid(tx, BalanceBook) {
+		//put transaction in Txpool
+		TxPool.AddToTransactionPool(tx)
+	}
 
-	//put transaction in Txpool
-	TxPool.AddToTransactionPool(tx)
+	go sendTxBeat(tx)
 
-	//todo - send TransactionBeat
+}
 
+func sendTxBeat(tx p5.Transaction) {
+	//send TransactionBeat
+	txBeat := p5.PrepareTransactionBeat(tx, &ID)
+
+	Peers.Rebalance()
+	peerMap := Peers.Copy()
+	//list over peers and send them heartBeat
+	if len(peerMap) > 0 {
+		for peerAddr := range peerMap {
+			_, _ = http.Post(peerAddr+"/txbeat/receive", "application/json; charset=UTF-8",
+				strings.NewReader(txBeat.EncodeToJson()))
+		}
+	}
+}
+
+func TransactionBeatRecv(w http.ResponseWriter, r *http.Request) { //todo
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Println("Err : in TransactionBeatRecv - reached err of ioutil.ReadAll -")
+		log.Println(err)
+	}
+	defer r.Body.Close()
+
+	txBeat := p5.DecodeToTransactionBeat(body)
+
+	//if txBeat.VerifyTxBeat() { //TxSig match in Beat
+	if p5.VerifyTxSig(txBeat.Tx.From, txBeat.Tx, txBeat.TxSig) {
+		//check if transaction is valid
+		if p5.IsTransactionValid(txBeat.Tx, BalanceBook) { //checks both book and amt promised
+			//put transaction in Txpool
+			TxPool.AddToTransactionPool(txBeat.Tx)
+
+			go forwardTxBeat(txBeat)
+		}
+	}
+}
+
+func forwardTxBeat(txBeat p5.TransactionBeat) {
+	//forward TransactionBeat
+	txBeat.Hops--
+	if txBeat.Hops > 0 {
+		Peers.Rebalance()
+		peerMap := Peers.Copy()
+		//list over peers and send them heartBeat
+		if len(peerMap) > 0 {
+			for peerAddr := range peerMap {
+				_, _ = http.Post(peerAddr+"/txbeat/receive", "application/json; charset=UTF-8",
+					strings.NewReader(txBeat.EncodeToJson()))
+			}
+		}
+	}
 }

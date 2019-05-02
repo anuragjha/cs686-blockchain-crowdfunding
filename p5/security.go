@@ -66,6 +66,7 @@ func generatePubPrivKeyPair() (*rsa.PrivateKey, *rsa.PublicKey) {
 	fmt.Println("pub.Size() : ", pub.Size())
 	fmt.Println("pub.E : ", pub.E)
 	fmt.Println("pub.N : ", pub.N)
+
 	return priv, pub
 }
 

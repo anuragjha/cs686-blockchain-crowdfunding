@@ -106,10 +106,12 @@ func (peers *PeerList) Delete(addr string) {
 
 //Rebalance func changes the PeerMap to contain take maxLength(32) closest peers (by Id)
 func (peers *PeerList) Rebalance() {
-	peers.mux.Lock()
-	defer peers.mux.Unlock()
 
 	if int32(len(peers.peerMap)) > peers.maxLength {
+
+		peers.mux.Lock()
+		defer peers.mux.Unlock()
+
 		//fmt.Println("in Rebalance")
 		//fmt.Println("in Rebalance : original peerMap length : ", len(peers.peerMap))
 		peers.peerMap["selfAddr"] = peers.selfId //adding self id to peerMap

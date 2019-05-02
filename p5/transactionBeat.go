@@ -18,6 +18,7 @@ func NewTransactionBeat(tx Transaction, fromPid *PublicIdentity, fromSig []byte)
 		Tx:      tx,
 		TxSig:   fromSig,
 		FromPid: fromPid,
+		Hops:    1,
 	}
 }
 
@@ -29,6 +30,7 @@ func PrepareTransactionBeat(tx Transaction, sid *Identity) TransactionBeat {
 		Tx:      tx,
 		TxSig:   CreateTxSig(tx, sid),
 		FromPid: &pid,
+		Hops:    1,
 	}
 }
 
@@ -55,9 +57,9 @@ func (data *TransactionBeat) EncodeToJson() string {
 }
 
 //DecodeToHeartBeatData func decodes json string to HeartBeatData
-func DecodeToTransactionBeat(transactionBeatJson string) TransactionBeat {
+func DecodeToTransactionBeat(transactionBeatJson []byte) TransactionBeat {
 	tb := TransactionBeat{}
-	err := json.Unmarshal([]byte(transactionBeatJson), &tb)
+	err := json.Unmarshal(transactionBeatJson, &tb)
 	if err != nil {
 		log.Println("Err in DecodeToTransactionBeat in transactionBeat.go - err : ", err)
 		log.Println("Error transactionBeatJson : ", transactionBeatJson)
@@ -65,4 +67,10 @@ func DecodeToTransactionBeat(transactionBeatJson string) TransactionBeat {
 
 	}
 	return tb
+}
+
+func (data *TransactionBeat) VerifyTxSigInTxBeat() bool {
+
+	return VerifyTxSig(data.Tx.From, data.Tx, data.TxSig)
+
 }

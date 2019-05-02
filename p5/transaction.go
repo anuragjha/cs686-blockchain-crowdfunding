@@ -3,7 +3,6 @@ package p5
 import (
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"golang.org/x/crypto/sha3"
 	"log"
 	"strconv"
@@ -15,14 +14,16 @@ type Transaction struct {
 	From      *PublicIdentity
 	To        *PublicIdentity //if To is empty then its a borrowing tx
 	Tokens    float64
+	Fees      float64
 	Timestamp time.Time
 }
 
-func NewTransaction(from *PublicIdentity, to *PublicIdentity, tokens float64) Transaction {
+func NewTransaction(from *PublicIdentity, to *PublicIdentity, tokens float64, fees float64) Transaction {
 	tx := Transaction{
 		From:      from,
 		To:        to,
 		Tokens:    tokens,
+		Fees:      fees,
 		Timestamp: time.Now(),
 	}
 
@@ -53,6 +54,11 @@ func CreateTxSig(tx Transaction, fromSid *Identity) []byte {
 	return fromSid.GenSignature(TransactionToJsonByteArray(tx))
 }
 
+func VerifyTxSig(fromPid *PublicIdentity, tx Transaction, txSig []byte) bool {
+
+	return VerifySingature(fromPid.PublicKey, TransactionToJsonByteArray(tx), txSig)
+}
+
 func TransactionToJsonByteArray(tx Transaction) []byte {
 	txJson, err := json.Marshal(tx)
 	if err != nil {
@@ -64,8 +70,31 @@ func TransactionToJsonByteArray(tx Transaction) []byte {
 
 func DecodeToTransaction(txJson []byte) Transaction {
 	tx := Transaction{}
-	jerr := json.Unmarshal([]byte(txJson), &tx)
-	if jerr != nil {
+	err := json.Unmarshal(txJson, &tx)
+	if err != nil {
 		log.Println("Error in unmarshalling Transaction")
 	}
+
+	return tx
+}
+
+func IsTransactionValid(tx Transaction, balanceBook BalanceBook) bool {
+
+	//balanceBook.Book <hash of PublicKey, Balance Amount>
+	//getting hash of public key of tx.From - to get key for balance.Book
+	//hash :=sha3.Sum256(tx.From.PublicKey.N.Bytes())
+	//hashKey := hex.EncodeToString(hash[:])
+	//using hashKey to get the Balance amount
+	//balanceStr, err := balanceBook.Book.Get(hashKey)
+	//balance, err := strconv.ParseFloat(balanceStr, 64) // todo ?? if ERR then should i make balance zero ???? !!!
+	//if err != nil {
+	//	return false
+	//}
+
+	//if  balance > tx.Tokens {
+	//	return true
+	//}
+	//return false
+
+	return balanceBook.IsBalanceEnough(balanceBook.GetKey(tx.From.PublicKey), tx.Tokens+tx.Fees)
 }

@@ -64,7 +64,7 @@ var routes = Routes{
 	Route{
 		"TransactionBeatRecv",
 		"POST",
-		"/transactionBeatRecv", //to put in tx pool
+		"/txbeat/receive", //to put in tx pool
 		TransactionBeatRecv,
 	},
 	Route{
