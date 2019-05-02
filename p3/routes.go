@@ -13,6 +13,12 @@ type Routes []Route
 
 var routes = Routes{
 	Route{
+		"Start",
+		"GET",
+		"/start",
+		Start,
+	},
+	Route{
 		"Show",
 		"GET",
 		"/show",
@@ -43,21 +49,34 @@ var routes = Routes{
 		HeartBeatReceive,
 	},
 	Route{
-		"Start",
-		"GET",
-		"/start",
-		Start,
-	},
-	Route{
 		"Canonical",
 		"GET",
 		"/canonical",
 		Canonical,
 	},
+	////////currency
 	Route{
 		"Transaction",
 		"POST",
-		"/transaction",
+		"/transaction", //to put in tx pool
 		Transaction,
+	},
+	Route{
+		"ShowWallet",
+		"GET",
+		"/showWallet", //to put in tx pool
+		ShowWallet,
+	},
+	Route{
+		"ShowBalanceBook",
+		"GET",
+		"/showBalanceBook", //to put in tx pool
+		ShowBalanceBook,
+	},
+	Route{
+		"ShowTransactionPool",
+		"GET",
+		"/showTransactionPool", //to put in tx pool
+		ShowTransactionPool,
 	},
 }

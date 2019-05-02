@@ -3,6 +3,7 @@ package p3
 import (
 	//"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"io/ioutil"
 	"log"
 	//"math/rand"
@@ -11,8 +12,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/gorilla/mux"
 
 	"../p1"
 	"../p2/block"
@@ -49,9 +48,12 @@ const Difficulty = 5
 
 var ifStarted bool
 
-var SID p5.Identity
-var BalanceBook p1.MerklePatriciaTrie
+var ID p5.Identity
+
+var BalanceBook p5.BalanceBook
 var Wallet p5.Wallet
+
+var TxPool p5.TransactionPool
 
 func init() {
 	// This function will be executed before everything else.
@@ -75,22 +77,29 @@ func Start(w http.ResponseWriter, r *http.Request) {
 	if ifStarted == false {
 		ifStarted = true
 
-		id := Register()                      //register ID
-		Peers = data.NewPeerList(id, SID, 32) //initialize PeerList // 32 sunnit
+		id := Register() //register ID\
 
-		Peers.AddPid(SELF_ADDR, SID.GetMyPublicIdentity()) //p5
+		ID = p5.NewIdentity(strconv.Itoa(int(id)))
+
+		Peers = data.NewPeerList(id, ID, 32) //initialize PeerList // 32 sunnit
+
+		Peers.AddPid(SELF_ADDR, ID.GetMyPublicIdentity()) //p5
 
 		SBC = data.NewBlockChain() //create new Block chain //apr4
 
 		if strings.Compare(SELF_ADDR, INIT_SERVER) == 0 {
 			fmt.Println("Generating Genesis block")
 			mpt := p1.MerklePatriciaTrie{}
-			mpt.Insert("First Message", "Anurag's blockchain")
+			mpt.Insert("First Message", "usf Crowd Funding Platform")
 			nonce := p4.FindNonce("genesis", &mpt, Difficulty)
 			b1 := SBC.GenBlock(1, "genesis", mpt, nonce)
 			SBC.Insert(b1)
 
 		}
+
+		//currency //p5 //todo p5 todo p5 CURRENCY
+		InitBalanceBook() // in handlerCurrencyHelper
+		InitWallet()      // in handlerCurrencyHelper
 
 		//if Peers.GetSelfId() != 6686 { //download if not 6686
 		if SELF_ADDR != INIT_SERVER {
@@ -120,72 +129,6 @@ func Show(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//Canonical func -  Display canonical chain
-func Canonical(w http.ResponseWriter, r *http.Request) {
-
-	canonicalChains := p4.GetCanonicalChains(&SBC)
-
-	_, _ = fmt.Fprint(w, "Canonical Chain(s) : \n")
-	for i, chain := range canonicalChains {
-		_, _ = fmt.Fprint(w, "\nChain #"+strconv.Itoa(i+1))
-		_, err := fmt.Fprint(w, "\n", chain.ShowCanonical())
-		if err != nil {
-			_, _ = fmt.Fprint(w, "ERROr in Canonical")
-		}
-	}
-	//
-}
-
-// Register to TA's server, get an ID
-func Register() int32 {
-
-	body := os.Args[1]
-
-	id, err := strconv.Atoi(string(body))
-	if err != nil {
-		log.Fatal(err)
-		return 0
-	}
-
-	SID = p5.NewIdentity(body)
-
-	return int32(id)
-}
-
-// Download blockchain from TA server
-func Download() {
-	resp, err := http.Get(BC_DOWNLOAD_SERVER)
-	//resp, err := http.Get("http://localhost:6686/upload/")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body) //blockChainJson
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	SBC.UpdateEntireBlockChain(string(body))
-}
-
-func DownloadPeerMapPid() {
-	resp, err := http.Get(PID_DOWNLOAD_SERVER)
-	//resp, err := http.Get("http://localhost:6686/uploadpids/")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body) //blockChainJson
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	//SBC.UpdateEntireBlockChain(string(body))
-	Peers.InjectPeerMapPidJson(string(body), SELF_ADDR)
-}
-
 // Upload blockchain to whoever called this method, return jsonStr
 func Upload(w http.ResponseWriter, r *http.Request) {
 	blockChainJson, err := SBC.BlockChainToJson()
@@ -210,24 +153,6 @@ func UploadPids(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Fprint(w, peerMapPidJson)
 
-}
-
-// Upload genesis blockchain to whoever called this method, return jsonStr
-func UploadGenesis(w http.ResponseWriter, r *http.Request) {
-
-	nbc := data.NewBlockChain()
-	gbl, _ := SBC.Get(1)
-	nbc.Insert(gbl[0])
-
-	blockChainJson, err := nbc.BlockChainToJson()
-	if err != nil {
-		//data.PrintError(err, "Upload") // todo
-		log.Println("in Err of Upload Genesis")
-	}
-	_, err = fmt.Fprint(w, blockChainJson)
-	if err != nil {
-		log.Println("in Err of Upload Genesis writing response")
-	}
 }
 
 // UploadBlock func - Upload a block to whoever called this method, return jsonStr
@@ -267,24 +192,109 @@ func HeartBeatReceive(w http.ResponseWriter, r *http.Request) {
 	} else {
 		defer r.Body.Close()
 
-		heartBeat := data.DecodeToHeartBeatData(string(body)) // heartBeat struct
+		//decrypt with privateKey //p5
+		//deciphered := p5.DecryptMessageWithPrivateKey(SID.GetMyPrivateKey(), body)
+		heartBeat := data.DecodeToHeartBeatData(string( /*deciphered*/ body)) // heartBeat struct
 
-		if signVerified(heartBeat) { //p5
+		if isSignVerified(heartBeat) { //p5
 			fmt.Println("Sign verified :-)")
+
+			go processHeartBeat(data.DecodeToHeartBeatData(string(body))) // process for the receieved heartbeat
+
+			go forwardHeartBeat(data.DecodeToHeartBeatData(string(body))) // forward the heartBeat // here sunnit
+
 		} else {
 			fmt.Println("Sign NOT verified :-(")
 			fmt.Println("sig recv : ", heartBeat.SignForBlockJson)
 		}
 
-		go processHeartBeat(data.DecodeToHeartBeatData(string(body))) // process for the receieved heartbeat
-
-		go forwardHeartBeat(data.DecodeToHeartBeatData(string(body))) // forward the heartBeat // here sunnit
-
 	}
 
 }
 
-func signVerified(heartBeat data.HeartBeatData) bool {
+//Canonical func -  Display canonical chain
+func Canonical(w http.ResponseWriter, r *http.Request) {
+
+	canonicalChains := p4.GetCanonicalChains(&SBC)
+
+	_, _ = fmt.Fprint(w, "Canonical Chain(s) : \n")
+	for i, chain := range canonicalChains {
+		_, _ = fmt.Fprint(w, "\nChain #"+strconv.Itoa(i+1))
+		_, err := fmt.Fprint(w, "\n", chain.ShowCanonical())
+		if err != nil {
+			_, _ = fmt.Fprint(w, "ERROr in Canonical")
+		}
+	}
+	//
+}
+
+// Register to TA's server, get an ID
+func Register() int32 {
+
+	body := os.Args[1]
+
+	id, err := strconv.Atoi(string(body))
+	if err != nil {
+		log.Fatal(err)
+		return 0
+	}
+
+	return int32(id)
+}
+
+// Download blockchain from TA server
+func Download() {
+	resp, err := http.Get(BC_DOWNLOAD_SERVER)
+	//resp, err := http.Get("http://localhost:6686/upload/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body) //blockChainJson
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	SBC.UpdateEntireBlockChain(string(body))
+}
+
+func DownloadPeerMapPid() {
+	resp, err := http.Get(PID_DOWNLOAD_SERVER)
+	//resp, err := http.Get("http://localhost:6686/uploadpids/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body) //blockChainJson
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//SBC.UpdateEntireBlockChain(string(body))
+	Peers.InjectPeerMapPidJson(string(body), SELF_ADDR)
+}
+
+// Upload genesis blockchain to whoever called this method, return jsonStr
+func UploadGenesis(w http.ResponseWriter, r *http.Request) {
+
+	nbc := data.NewBlockChain()
+	gbl, _ := SBC.Get(1)
+	nbc.Insert(gbl[0])
+
+	blockChainJson, err := nbc.BlockChainToJson()
+	if err != nil {
+		//data.PrintError(err, "Upload") // todo
+		log.Println("in Err of Upload Genesis")
+	}
+	_, err = fmt.Fprint(w, blockChainJson)
+	if err != nil {
+		log.Println("in Err of Upload Genesis writing response")
+	}
+}
+
+func isSignVerified(heartBeat data.HeartBeatData) bool {
 
 	senderPid := p5.PublicIdentity(heartBeat.Pid)
 	//senderHashForKey := p5.GenerateHashForKey(senderPid.Label)
@@ -343,8 +353,8 @@ func forwardHeartBeat(heartBeatData data.HeartBeatData) {
 	if hopCount > 0 {
 		heartBeatData.Hops--
 		heartBeatData.Id = Peers.GetSelfId()
-		heartBeatData.Pid = SID.GetMyPublicIdentity()
-		heartBeatData.SignForBlockJson = SID.GenSignature([]byte(heartBeatData.BlockJson))
+		heartBeatData.Pid = ID.GetMyPublicIdentity()
+		heartBeatData.SignForBlockJson = ID.GenSignature([]byte(heartBeatData.BlockJson))
 		heartBeatData.Addr = SELF_ADDR
 
 		//json, _ := json.Marshal(peerMap)
@@ -443,15 +453,23 @@ func StartHeartBeat() {
 		//selfAddr := "http://localhost:" + os.Args[1] // SELF_ADDR
 
 		//func PrepareHeartBeatData(sbc *SyncBlockChain, selfId int32, selfSid p5.PublicIdentity, peerMapBase64 string, peerMapSIDBase64 string, addr string, makingNew bool, newBlockJson string, signForBlockJson string) HeartBeatData
-		heartBeat := data.PrepareHeartBeatData(&SBC, Peers.GetSelfId(), SID.GetMyPublicIdentity(), PeerMapJson, PeerMapPidJson, SELF_ADDR, false, "{}", SID.GenSignature([]byte("{}")))
+		heartBeat := data.PrepareHeartBeatData(&SBC, Peers.GetSelfId(), ID.GetMyPublicIdentity(), PeerMapJson, PeerMapPidJson, SELF_ADDR, false, "{}", ID.GenSignature([]byte("{}")))
 
 		//list over peers and send them heartBeat
 		if len(peerMap) > 0 {
-			for peer := range peerMap {
-				_, err := http.Post(peer+"/heartbeat/receive", "application/json; charset=UTF-8",
+			for peerAddr := range peerMap {
+
+				_, err := http.Post(peerAddr+"/heartbeat/receive", "application/json; charset=UTF-8",
 					strings.NewReader(heartBeat.EncodeToJson())) //apr4
+
+				//encrypting heartbeat json with peerpublic id // todo en-crypto
+				//EncryptMessageWithPublicKey(hash1 hash.Hash, publicKey *rsa.PublicKey, message string, label string)
+				//peerPid := p5.PublicIdentity(peerMapPid[peerAddr]).PublicKey
+				//ciphered := p5.EncryptMessageWithPublicKey( peerPid, heartBeat.EncodeToJson() )
+				//_, err := http.Post(peerAddr+"/heartbeat/receive", "application/octet-stream; charset=UTF-8",
+				//	strings.NewReader(string(ciphered))) //apr30 p5
 				if err != nil {
-					Peers.Delete(peer)
+					Peers.Delete(peerAddr)
 					//fmt.Println("deleting peer : ", peer)
 				}
 			}
@@ -528,35 +546,54 @@ func SendBlockBeat(height int32, parentHash string, nonce string, mpt p1.MerkleP
 		log.Println("in sendBlockBeat, Error in converting peerMapPid to json : err - ", err)
 	}
 
-	signForBlockJson := SID.GenSignature([]byte(blockJson))
+	signForBlockJson := ID.GenSignature([]byte(blockJson))
 
-	heartBeat := data.PrepareHeartBeatData(&SBC, Peers.GetSelfId(), SID.GetMyPublicIdentity(), PeerMapJson, PeerMapPidJson, SELF_ADDR, true, blockJson, signForBlockJson)
+	heartBeat := data.PrepareHeartBeatData(&SBC, Peers.GetSelfId(), ID.GetMyPublicIdentity(), PeerMapJson, PeerMapPidJson, SELF_ADDR, true, blockJson, signForBlockJson)
 
 	//list over peers and send them heartBeat
 	if len(peerMap) > 0 {
-		for peer := range peerMap {
-			_, err := http.Post(peer+"/heartbeat/receive", "application/json; charset=UTF-8",
+		for peerAddr := range peerMap {
+
+			_, err := http.Post(peerAddr+"/heartbeat/receive", "application/json; charset=UTF-8",
 				strings.NewReader(heartBeat.EncodeToJson())) //apr4
+
+			//encrypting heartbeat json with peerpublic id //Todo crypto
+			////EncryptMessageWithPublicKey(hash1 hash.Hash, publicKey *rsa.PublicKey, message string, label string)
+			//peerPid := p5.PublicIdentity(peerMapPid[peerAddr]).PublicKey
+			//ciphered := p5.EncryptMessageWithPublicKey( peerPid, heartBeat.EncodeToJson() )
+			//_, err := http.Post(peerAddr+"/heartbeat/receive", "application/octet-stream; charset=UTF-8",
+			//	strings.NewReader(string(ciphered))) //apr30 //p5
 			if err != nil {
-				Peers.Delete(peer)
+				Peers.Delete(peerAddr)
 				//fmt.Println("deleting peer : ", peer)
 			}
 		}
 	}
 }
 
-//for return code 500
-func returnCode500(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Server Error", http.StatusInternalServerError)
-	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-}
-
-//for return code 204
-func returnCode204(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Block does not exists", http.StatusNoContent)
-	http.Error(w, http.StatusText(http.StatusNoContent), http.StatusNoContent)
-}
+///////////////////////////////
 
 func Transaction(w http.ResponseWriter, r *http.Request) { //todo
 
+}
+
+func ShowWallet(w http.ResponseWriter, r *http.Request) {
+	_, err := fmt.Fprintf(w, "%s\n", Wallet.Show())
+	if err != nil {
+		log.Println("Err in ShowWallet func while writing response")
+	}
+}
+
+func ShowBalanceBook(w http.ResponseWriter, r *http.Request) {
+	_, err := fmt.Fprintf(w, "%s\n", BalanceBook.Show())
+	if err != nil {
+		log.Println("Err in ShowWallet func while writing response")
+	}
+}
+
+func ShowTransactionPool(w http.ResponseWriter, r *http.Request) {
+	_, err := fmt.Fprintf(w, "%s\n", TxPool.Show())
+	if err != nil {
+		log.Println("Err in ShowWallet func while writing response")
+	}
 }
