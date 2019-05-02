@@ -2,13 +2,14 @@
 
 
 # (1) Crypto 
+Achieving data integrity by use of Signature.
 
 ## security.go
 Implements the public-private keys and Hash generation. Also creating signature and verifying signature.
 Contains two data structs - Identity and PublicIdentity.
-GetPublicIdentity in security.go - for Node to be able to get its PublicId in new variable.
+GetPublicIdentity stuct in security.go - for Node to be able to get its PublicId in new variable.
 
-Using golang rsa PKCS1v15 to sign and verify and encrypt and decrypt.
+Using golang rsa PKCS1v15 to sign and verify.
 
 1. new data structs in security.go
   - Identity {
@@ -40,29 +41,31 @@ Using golang rsa PKCS1v15 to sign and verify and encrypt and decrypt.
    PeerMapPidJson  
 
 ## handlers.go
-### Todo - sender have to encrypt the heartbeat with public key of receving peers, Receiever have to decrypt the heartbeat with private key of itself. - testing left
+(Todo - sender have to encrypt the heartbeat with public key of receving peers, Receiever have to decrypt the heartbeat with private key of itself. - only when confidentiality is needed)
+
 1) In StartHeartBeat func - AND - In SendBlockBeat func -
 Add new params to PrepareHeartBeatData func call
     add signature for blockjson
     add Pid of Sender
-Add Encrypt heartbeat with public key of "to whom the heartbeat is being sent". (in for loop)
-
-2)In HeartBeatReceive func -
-Add Decrypt heartbeat as soon as receieved
+    
+(Add Encrypt heartbeat with public key of "to whom the heartbeat is being sent". (in for loop))
+((2)In HeartBeatReceive func -)
+(Add functionality to Decrypt heartbeat as soon as receieved)
 
 
 
 ## API
-GET /uploadpids - to be used first time along with download blockchain.
+GET /uploadpids - to download the public key map from Register server to be used first time along with download blockchain.
 
 HeartBeat send and Receieve now additionally deals with Signature of sender and its verification by receiever.
 
->>>>>>>>>>>>
-Have to add functionality to send encrypted blockjson and decrypt blockjson - in handler.go (funcs available in security.go)
+(Have to add functionality to send encrypted blockjson and decrypt blockjson - in handler.go (funcs available in security.go))
 
 
 # (2) Currency
-Peers have 1000 default for now.
+Adding mechanism to enable comodity(digital token) to be exchanged between peers.
+
+Peers have 1000 in begining by default for now.
 They can create tx, the tx then goes to tx pool.
 Txs are picked by a peer from Tx pool.
 Tx remain in pool until it is part of canonical chain
@@ -85,16 +88,15 @@ else if Lending Tx
     >if lender id is new 
       Add lender id, lended amount on Promised MPT for that Borrowing Tx in the PromiseList Map
     else if lender id is old
-      For that lender id, inccrease the existing amout by this new lended tokens
+      Get that lender id, increase the existing amout by this new lended tokens
     >if Total Promised Amt meets the Borrowing Requirement
       Process the entry in PromiseList Map for that Borrowing TX ** processPromises(Borrowing Tx) **
-      Remove the entry from PromiseList Map
-    
-    
+        
 ** 
 processPromises(Borrowing Tx)
   get Entry from PromiseList struct { Map < BorrowingTX, Promised Struct > } for the corresponding Borrowing Tx
-  Add 
+  Add the total of lended tokens 
+  Remove the entry from PromiseList Map
   
 ---------------------------------------------------------
 ## transaction.go
