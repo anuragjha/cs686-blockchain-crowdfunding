@@ -62,6 +62,12 @@ var routes = Routes{
 		Transaction,
 	},
 	Route{
+		"TransactionBeatRecv",
+		"POST",
+		"/transactionBeatRecv", //to put in tx pool
+		TransactionBeatRecv,
+	},
+	Route{
 		"ShowWallet",
 		"GET",
 		"/showWallet", //to put in tx pool

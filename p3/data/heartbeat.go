@@ -22,7 +22,7 @@ type HeartBeatData struct {
 	Id               int32             `json:"id"`
 	Pid              p5.PublicIdentity `json:"pid"`
 	BlockJson        string            `json:"blockJson"`
-	SignForBlockJson []byte            `json:"signForBlockJson"` //todo
+	SignForBlockJson []byte            `json:"signForBlockJson"`
 	PeerMapJson      string            `json:"peerMapJson"`
 	PeerMapPidJson   string            `json:"peerMapPidJson"`
 	Addr             string            `json:"addr"`
@@ -92,7 +92,7 @@ func (data *HeartBeatData) EncodeToJsonByteArray() []byte {
 
 	dataEncodedBytearray, err := json.Marshal(data)
 	if err != nil {
-		fmt.Println("Here in err condition of EncodeToJson of heartbeat.go")
+		fmt.Println("Here in err condition of EncodeToJsonByteArray of heartbeat.go")
 		return nil
 	}
 	return dataEncodedBytearray

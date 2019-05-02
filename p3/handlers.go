@@ -573,10 +573,6 @@ func SendBlockBeat(height int32, parentHash string, nonce string, mpt p1.MerkleP
 
 ///////////////////////////////
 
-func Transaction(w http.ResponseWriter, r *http.Request) { //todo
-
-}
-
 func ShowWallet(w http.ResponseWriter, r *http.Request) {
 	_, err := fmt.Fprintf(w, "%s\n", Wallet.Show())
 	if err != nil {
@@ -596,4 +592,28 @@ func ShowTransactionPool(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("Err in ShowWallet func while writing response")
 	}
+}
+
+func TransactionBeatRecv(w http.ResponseWriter, r *http.Request) { //todo
+
+}
+
+func Transaction(w http.ResponseWriter, r *http.Request) { //todo
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Println("Err : in HeartBeatReceive - reached err of ioutil.ReadAll -")
+		log.Println(err)
+	}
+	defer r.Body.Close()
+
+	tx := p5.DecodeToTransaction(body)
+
+	//todo - check if transaction is valid
+
+	//todo - put transaction in Txpool
+	TxPool.AddToTransactionPool(tx)
+
+	//todo - send TransactionBeat
+
 }

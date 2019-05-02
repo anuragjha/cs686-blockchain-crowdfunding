@@ -3,6 +3,7 @@ package p5
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"golang.org/x/crypto/sha3"
 	"log"
 	"strconv"
@@ -59,4 +60,12 @@ func TransactionToJsonByteArray(tx Transaction) []byte {
 	}
 
 	return txJson
+}
+
+func DecodeToTransaction(txJson []byte) Transaction {
+	tx := Transaction{}
+	jerr := json.Unmarshal([]byte(txJson), &tx)
+	if jerr != nil {
+		log.Println("Error in unmarshalling Transaction")
+	}
 }
