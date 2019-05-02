@@ -611,7 +611,7 @@ func Transaction(w http.ResponseWriter, r *http.Request) { //todo
 
 	//todo - check if transaction is valid
 
-	//todo - put transaction in Txpool
+	//put transaction in Txpool
 	TxPool.AddToTransactionPool(tx)
 
 	//todo - send TransactionBeat
