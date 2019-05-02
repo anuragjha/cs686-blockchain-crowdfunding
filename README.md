@@ -24,6 +24,7 @@ Using golang rsa PKCS1v15 to sign and verify.
       }
 
 ## peerlist.go
+ ### Todo - merge logic of processing PeerMap and PeerMapPid 
  PeerList - new variables in struct
   secureId    - added to contain secureId of dataType Identity.
   peerMapPid  - now also contains PeerMapPid
@@ -32,8 +33,7 @@ Using golang rsa PKCS1v15 to sign and verify.
   Methods added - 
   InjectPeerMapPidJson method - to inject receieved pidJson in receiever map
   And other methods relating PeerMapPid, parallel in logic with PeerMap
-  ### Todo - merge logic of processing PeerMap and PeerMapPid 
-
+ 
 ## heartbeat.go
  HeartBeat changed to now also include
    Pid
@@ -158,9 +158,17 @@ Need encryption of Holding account ????
 if for every borrowing tx - a holding account is created.
 And Lending amt is kept there until it is ready for use by borrowers.
 
+## API
 
+GET /ShowWallet
+GET /ShowBalanceBook
+GET /ShowTransactionPool
 
+POST /transaction
+  req body should contain a Transaction
 
+POST /transactionBeatRecv
+  req body should contain TransactionBeat( {Tx, FromPid, TxSignature, Hops} ) 
 
 
 
