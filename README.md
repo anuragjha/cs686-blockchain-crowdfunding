@@ -67,13 +67,43 @@ They can create tx, the tx then goes to tx pool.
 Txs are picked by a peer from Tx pool.
 Tx remain in pool until it is part of canonical chain
 
+##### More on transactions
+There are 2 type of transaction
+- Borrowing Tx
+- Lending Tx
+Generics ?? <<<<<<<<<<<< to understand type of Transaction
+------------------------- some ALGO ---------------------
+For every Borrowing TX 
+  Create a Promised Struct {  PromiseMPT<Lender TX, Lending Amount> } 
+And add it in PromiseList struct { Map < BorrowingTX, Promised Struct > }
+
+if Borrowing Tx 
+  Create a Promised Struct {  PromiseMPT<Lender TX, Lending Amount> } 
+  And add it in PromiseList { Map < BorrowingTX, Promised Struct > }
+else if Lending Tx
+  loop over PromiseList to find the matching BorrowingTXId THEN
+    >if lender id is new 
+      Add lender id, lended amount on Promised MPT for that Borrowing Tx in the PromiseList Map
+    else if lender id is old
+      For that lender id, inccrease the existing amout by this new lended tokens
+    >if Total Promised Amt meets the Borrowing Requirement
+      Process the entry in PromiseList Map for that Borrowing TX ** processPromises(Borrowing Tx) **
+      Remove the entry from PromiseList Map
+    
+    
+** 
+processPromises(Borrowing Tx)
+  get Entry from PromiseList struct { Map < BorrowingTX, Promised Struct > } for the corresponding Borrowing Tx
+  Add 
+  
+---------------------------------------------------------
 ## transaction.go
 Data structs in transaction.go
-  1) Transaction {
-    Id
+  1) Transaction<type of Tx - Borrowing or Lending ?> {
+    Id - is hash of tx <<<<<<<<<
     From
     To
-    Tokens
+    AmountOfTokens <<<<<<<<<<<<<
     Timestamp
   }
 
@@ -84,7 +114,7 @@ Data structs in transaction.go
   3) TransactionBeat {
       Transaction
       FromPid
-      TxSig
+      TxSignature  <<<<<<<<
   }
 
 Funcs ->
@@ -122,6 +152,9 @@ IsBalanceEnough
 ## handlers.go
 Add data structs to Keep Balance, 
 
+Need encryption of Holding account ????
+if for every borrowing tx - a holding account is created.
+And Lending amt is kept there until it is ready for use by borrowers.
 
 
 
