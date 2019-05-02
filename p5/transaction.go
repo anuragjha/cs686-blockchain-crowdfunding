@@ -68,6 +68,15 @@ func TransactionToJsonByteArray(tx Transaction) []byte {
 	return txJson
 }
 
+func (tx *Transaction) TransactionToJson() string {
+	txJson, err := json.Marshal(tx)
+	if err != nil {
+		log.Println("in TransactionToJsonByteArray : Error in marshalling Tx : ", err)
+	}
+
+	return string(txJson)
+}
+
 func DecodeToTransaction(txJson []byte) Transaction {
 	tx := Transaction{}
 	err := json.Unmarshal(txJson, &tx)

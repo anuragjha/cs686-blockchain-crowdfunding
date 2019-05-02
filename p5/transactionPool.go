@@ -45,14 +45,21 @@ func (txp *TransactionPool) ReadFromTransactionPool(n int) map[Transaction]bool 
 	txp.mux.Lock()
 	defer txp.mux.Unlock()
 
-	tempMap := make(map[Transaction]bool, n)
+	tempMap := make(map[Transaction]bool, 1)
 	counter := 0
 	for tx := range txp.Pool {
-		counter++
-		if counter < n {
+
+		if counter >= n || counter >= len(txp.Pool) {
 			break
 		}
-		tempMap[tx] = false
+
+		if txp.Pool[tx] == false {
+			counter++
+			tempMap[tx] = false
+		} else {
+			continue
+		}
+
 	}
 	return tempMap
 }

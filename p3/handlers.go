@@ -111,7 +111,8 @@ func Start(w http.ResponseWriter, r *http.Request) {
 
 		//start HearBeat
 		go StartHeartBeat()
-		go StartTryingNonces() //pow
+		go StartTryingNonces() //pow //p5 - also creates mpt
+
 	}
 	w.WriteHeader(200)
 	_, err := w.Write([]byte("started : " + SELF_ADDR + "\n Pid : \n" + Peers.ShowPids()))
@@ -502,23 +503,32 @@ func tryingNonces( /*parentHash string, mpt *p1.MerklePatriciaTrie, */ difficult
 	for {
 
 		if GetNewParent == true {
+			GetNewParent = false
+
 			parentBlock = SBC.GetLatestBlocks()[0] //[rand.Int()%len(SBC.GetLatestBlocks())]//random parent from blocks at latest height
 			parentHash = parentBlock.Header.Hash
 			tryingForHeight = parentBlock.Header.Height + 1
 			fmt.Println("in tryingNonces : parentHash : ", parentHash)
-			mpt = p1.GenerateRandomMPT()
+			//mpt = p1.GenerateRandomMPT() //pow
+			mpt = GenerateTransactionsMPT() // txs in Mpt for p5
 			nonce = p4.InitializeNonce(8)
 
-			GetNewParent = false
 		}
 
 		if p4.POW(parentHash, nonce, mpt.Root, difficulty) {
 			//generate block send heartbeat (blockBeat)
 			SendBlockBeat(tryingForHeight, parentHash, nonce, mpt)
 
+			MarkTxInTxPoolAsUsed(mpt) // marking transaction true(used in block)
+
 			GetNewParent = true
 		}
+
 		nonce = p4.InitializeNonce(8) //NextNonce(Nonce)
+
+		//if tryingForHeight < SBC.GetLength() { //?? todo if the sbc length has increased
+		//	GetNewParent = true
+		//}
 
 	}
 
