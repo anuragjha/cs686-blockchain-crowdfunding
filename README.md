@@ -99,7 +99,17 @@ processPromises(Borrowing Tx)
   Remove the entry from PromiseList Map
   
 ---------------------------------------------------------
+------------------------- some ALGO ---------------------
+When Node receieves heartbeat :
+  ...
+  gets mpt 
+
+
+
+---------------------------------------------------------
 ## transaction.go
+A transaction is considered valid if tokens needed(including fees) >= balance in Book - Promised
+
 Data structs in transaction.go
   1) Transaction<type of Tx - Borrowing or Lending ?> {
     Id - is hash of tx <<<<<<<<<
@@ -141,7 +151,8 @@ Data structs in wallet.go
 ## balanceBook.go
 Data structs in balanceBook.go
   - BalanceBook {
-    Book, - mpt
+    Book,     - mpt
+    Promised, - mpt
     mutex,
   }
 
@@ -149,7 +160,7 @@ Data structs in balanceBook.go
 Funcs ->
 UpdateBalanceBook
 GetBalance
-IsBalanceEnough
+IsBalanceEnough - takes in key and needed balance - and returns true of false based on (Book and Promised)
 
 ## handlers.go
 Add data structs to Keep Balance, 
