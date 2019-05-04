@@ -161,6 +161,11 @@ Funcs ->
 UpdateBalanceBook
 GetBalance
 IsBalanceEnough - takes in key and needed balance - and returns true of false based on (Book and Promised)
+******** generate balancebook and Promise book for a Chain ******** todo
+GenerateBalanceAndPromise(SBC Sync Blockchain) {
+  use function in canonical chain 
+}
+*******************************************************************
 
 ## handlers.go
 Add data structs to Keep Balance, 
