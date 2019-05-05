@@ -132,9 +132,9 @@ Data structs in transaction.go
 Funcs ->
 CreateTransaction func -> takes params From public Id, To public Id, Tokens and Timestamp and -> returns Tx.
 NewTransactionBeat func -> takes params Tx, From public Id and FromSig and -> returns TransactionBeat.
-CreateTransactionBeat func ->  takes params Tx and Identity and -> returns 
-AddToTransactionPool func -> takes a transaction and adds it to TransactionPool
-DeleteFromTransactionPool func -> takes transaction id and deletes it from TransactionPool
+CreateTransactionBeat func ->  takes params Tx and Identity and -> returns. 
+AddToTransactionPool func -> takes a transaction and adds it to TransactionPool.
+DeleteFromTransactionPool func -> takes transaction id and deletes it from TransactionPool.
 ReadFromTransactionPool func -> takes in no. of tx to read and returns txmap of as many txs.
 
 
@@ -163,18 +163,18 @@ GetBalance
 _______________________________________________________________
 ---------     IsBalanceEnough  --------- 
 IsBalanceEnough - takes in key and needed balance - and returns true of false based on (Book and Promised)
----------  generate balancebook and Promise book for a Chain ---------  todo
 
+---------  generate balancebook and Promise book for a Chain ---------  todo
 GenerateBalanceAndPromise(SBC Sync Blockchain) {
   use function in canonical chain to get - the canonical blockchain
   start reading from 1st height block and read all the transactions to build up balancebook and promise book
 }
 
-
 _______________________________________________________________
 --------- Reading all transaction of one block ---------  todo
 get a Block 
 convert block to key value pairs
+for every key value pairs - check and update ... balancebook and promise
  
 
 
