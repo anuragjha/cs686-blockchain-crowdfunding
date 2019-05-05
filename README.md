@@ -90,9 +90,9 @@ else if Lending Tx
     else if lender id is old
       Get that lender id, increase the existing amout by this new lended tokens
     >if Total Promised Amt meets the Borrowing Requirement
-      Process the entry in PromiseList Map for that Borrowing TX ** processPromises(Borrowing Tx) **
+      Process the entry in PromiseList Map for that Borrowing TX !! processPromises(Borrowing Tx) !!(1)
         
-** 
+!!(1)!!
 processPromises(Borrowing Tx)
   get Entry from PromiseList struct { Map < BorrowingTX, Promised Struct > } for the corresponding Borrowing Tx
   Add the total of lended tokens 
