@@ -160,26 +160,25 @@ Data structs in balanceBook.go
 Funcs ->
 UpdateBalanceBook
 GetBalance
-_______________________________________________________________
----------     IsBalanceEnough  --------- 
-IsBalanceEnough - takes in key and needed balance - and returns true of false based on (Book and Promised)
 
----------  generate balancebook and Promise book for a Chain ---------  todo
-GenerateBalanceAndPromise(SBC Sync Blockchain) {
-  use function in canonical chain to get - the canonical blockchain
-  start reading from 1st height block and read all the transactions to build up balancebook and promise book
+//todo 
+_______________________________________________________________ IsBalanceEnough finc
+IsBalanceEnough() {
+ - takes in key and needed balance - and returns true of false based on (Book and Promised)
+}
+_______________________________________________________________   generate balancebook and Promise book for a Chain
+GenerateBalanceAndPromise(SBC SyncBlockchain) {
+  - use function in canonical chain to get - the canonical blockchain then
+  - start reading from 1st height block and read all the transactions to build up balancebook and promise book
 }
 
-_______________________________________________________________
---------- Reading all transaction of one block ---------  todo
-get a Block 
-convert block to key value pairs
-for every key value pairs - check and update ... balancebook and promise
- 
+_______________________________________________________________ Reading all transaction of one block 
+ - get a Block 
+ - convert block to key value pairs
+ - for every key value pairs - check and update ... balancebook and promise
 
+todo //
 
-
-_______________________________________________________________
 ## handlers.go
 Add data structs to Keep Balance, 
 
