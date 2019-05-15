@@ -49,9 +49,23 @@
 
 <!-- Page Content -->
 <div class="container">
+
+    <div class="container">
+        <div class="row">
+            <div class="alert alert-primary" role="alert">
+                <div class="col">
+                    <h4> Balance : <strong>{{ .Purse.Balance }} {{ .Purse.Unit }} </strong> </h4>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
     <div class="container">
         <h1 class="mt-4">Hi! {{.Pid.Label}}, Whats on your mind today ?</h1>
     </div>
+
 
     <div class="container-fluid">
         <form action="/transactionform" method="post">
@@ -77,6 +91,17 @@
                            </div>
                             <div class="col">
                                  <input type="text" placeholder="To" name="to" id="to">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col">
+                                <label for="txid"><b>Tx Id</b></label>
+                            </div>
+                            <div class="col">
+                                <input type="text" placeholder="Tx Id" name="txid" id="txid">
                             </div>
                         </div>
                     </div>
@@ -113,20 +138,7 @@
     </div>
 
 
-    <div class="container-fluid">
-        <div class="row">
-            <div class="alert alert-primary" role="alert">
-            <div class="col>
-                <h4> Balance : </h4>
-                <h4> <strong>{{ .Purse.Balance }} {{ .Purse.Unit }} </strong> </h4>
-            </div>
-            </div>
-
-        </div>
-    </div>
-
-
-    <div class="container-fluid">
+    <div class="container">
         <div class="row">
             <div class="col-8">
                 <h4> Requirements (Tx ids)</h4>
@@ -143,7 +155,7 @@
                 {{ $value.Tokens }}
             </div>
             {{ end }}
-
+        </div>
 
             <!--<div class="col-4">
                 \{\{ range $key, $value := .BTxs.BorrowingTxs }}

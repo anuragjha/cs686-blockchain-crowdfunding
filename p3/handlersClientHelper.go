@@ -157,8 +157,9 @@ func TransactionForm(w http.ResponseWriter, r *http.Request) {
 
 	fromVal := CID.GetMyPublicIdentity()                                             //r.FormValue("from")
 	log.Println("in TransactionForm - FromValue : ", fromVal.PublicIdentityToJson()) //empth here
-	//fromVal := p5.JsonToPublicIdentity(fromValue) //todo checkhere
-	toVal := p5.JsonToPublicIdentity(r.FormValue("to")) //todo check here
+	//fromVal := p5.JsonToPublicIdentity(fromValue)
+	toVal := p5.JsonToPublicIdentity(r.FormValue("to"))
+	toTxId := r.FormValue("txid")
 
 	amountVal, err := strconv.ParseFloat(r.FormValue("amount"), 64)
 	if err != nil {
@@ -170,7 +171,7 @@ func TransactionForm(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error in Amount conversion : err - ", err)
 	}
 
-	tx := p5.NewTransaction(fromVal, toVal, amountVal, feesVal, "")
+	tx := p5.NewTransaction(fromVal, toVal, toTxId, amountVal, feesVal, "")
 
 	txBeat := p5.NewTransactionBeat(tx, fromVal, tx.CreateTxSig(CID)) //todo - add signature
 	txBeatJson := txBeat.EncodeToJsonByteArray()

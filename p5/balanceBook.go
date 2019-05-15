@@ -18,8 +18,9 @@ import (
 
 type BalanceBook struct {
 	Book     p1.MerklePatriciaTrie //key - hashOfPubKey and Value - balance
-	Promised p1.MerklePatriciaTrie //key - hashOfPubKey and Value - promised amount
-	mux      sync.Mutex
+	Promised p1.MerklePatriciaTrie //key - transactionId and Value - promised amount
+	// key - Requirement transaction in json -||- value - map of <To Txs in json,
+	mux sync.Mutex
 }
 
 func NewBalanceBook() BalanceBook {
@@ -93,6 +94,9 @@ func (bb *BalanceBook) UpdateABalanceBookForTx(tx Transaction) { // update bb ba
 		bb.UpdateABalanceInBook(toKey, tx.Tokens)
 		//bb.UpdateABalanceInBook(toKey, -tx.Fees)
 
+	} else if tx.ToTxId != "" {
+		bb.UpdateABalanceInPromised(tx)
+
 	} else if tx.To.Label == "" { // A 's Req Tx // Requirement
 
 	}
@@ -100,6 +104,19 @@ func (bb *BalanceBook) UpdateABalanceBookForTx(tx Transaction) { // update bb ba
 }
 
 func (bb *BalanceBook) UpdateABalanceInBook(PublicKeyHashStr string, updateBalanceBy float64) {
+	bb.mux.Lock()
+	defer bb.mux.Unlock()
+
+	//pubIdHashStr := GetHashOfPublicKey(pubId) //hashOfPublicKey
+
+	currBalance := bb.GetBalanceFromKey(PublicKeyHashStr)
+
+	newBalance := currBalance + updateBalanceBy
+
+	bb.Book.Insert(PublicKeyHashStr, fmt.Sprintf("%f", newBalance))
+}
+
+func (bb *BalanceBook) UpdateABalanceInPromised(tx Transaction) {
 	bb.mux.Lock()
 	defer bb.mux.Unlock()
 

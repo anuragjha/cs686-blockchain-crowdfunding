@@ -244,7 +244,7 @@ func TransactionPoolRecv(w http.ResponseWriter, r *http.Request) {
 }
 
 func GiveDefaultTokens(cid p5.ClientId) {
-	tx := p5.NewTransaction(ID.GetMyPublicIdentity(), cid.GetMyPublicIdentity(), 1000, 100, "default")
+	tx := p5.NewTransaction(ID.GetMyPublicIdentity(), cid.GetMyPublicIdentity(), "", 1000, 100, "default")
 	TxPool.AddToTransactionPool(tx)
 
 	//txBeat := p5.NewTransactionBeat(tx, ID.GetMyPublicIdentity(), tx.CreateTxSigForMiner(ID))
@@ -253,7 +253,7 @@ func GiveDefaultTokens(cid p5.ClientId) {
 }
 
 func GiveGenesisTokens(cid p5.Identity) {
-	tx := p5.NewTransaction(ID.GetMyPublicIdentity(), cid.GetMyPublicIdentity(), 10000, 0, "start")
+	tx := p5.NewTransaction(ID.GetMyPublicIdentity(), cid.GetMyPublicIdentity(), "", 10000, 0, "start")
 	TxPool.AddToTransactionPool(tx)
 
 	//txBeat := p5.NewTransactionBeat(tx, ID.GetMyPublicIdentity(), tx.CreateTxSigForMiner(ID))
