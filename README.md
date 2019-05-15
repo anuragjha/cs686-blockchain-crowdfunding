@@ -90,16 +90,26 @@ else if Lending Tx
     else if lender id is old
       Get that lender id, increase the existing amout by this new lended tokens
     >if Total Promised Amt meets the Borrowing Requirement
-      Process the entry in PromiseList Map for that Borrowing TX ** processPromises(Borrowing Tx) **
+      Process the entry in PromiseList Map for that Borrowing TX !! processPromises(Borrowing Tx) !!(1)
         
-** 
+!!(1)!!
 processPromises(Borrowing Tx)
   get Entry from PromiseList struct { Map < BorrowingTX, Promised Struct > } for the corresponding Borrowing Tx
   Add the total of lended tokens 
   Remove the entry from PromiseList Map
   
 ---------------------------------------------------------
+------------------------- some ALGO ---------------------
+When Node receieves heartbeat :
+  ...
+  gets mpt 
+
+
+
+---------------------------------------------------------
 ## transaction.go
+A transaction is considered valid if tokens needed(including fees) >= balance in Book - Promised
+
 Data structs in transaction.go
   1) Transaction<type of Tx - Borrowing or Lending ?> {
     Id - is hash of tx <<<<<<<<<
@@ -122,9 +132,9 @@ Data structs in transaction.go
 Funcs ->
 CreateTransaction func -> takes params From public Id, To public Id, Tokens and Timestamp and -> returns Tx.
 NewTransactionBeat func -> takes params Tx, From public Id and FromSig and -> returns TransactionBeat.
-CreateTransactionBeat func ->  takes params Tx and Identity and -> returns 
-AddToTransactionPool func -> takes a transaction and adds it to TransactionPool
-DeleteFromTransactionPool func -> takes transaction id and deletes it from TransactionPool
+CreateTransactionBeat func ->  takes params Tx and Identity and -> returns. 
+AddToTransactionPool func -> takes a transaction and adds it to TransactionPool.
+DeleteFromTransactionPool func -> takes transaction id and deletes it from TransactionPool.
 ReadFromTransactionPool func -> takes in no. of tx to read and returns txmap of as many txs.
 
 
@@ -141,7 +151,8 @@ Data structs in wallet.go
 ## balanceBook.go
 Data structs in balanceBook.go
   - BalanceBook {
-    Book, - mpt
+    Book,     - mpt
+    Promised, - mpt
     mutex,
   }
 
@@ -149,7 +160,24 @@ Data structs in balanceBook.go
 Funcs ->
 UpdateBalanceBook
 GetBalance
-IsBalanceEnough
+
+//todo 
+_______________________________________________________________ IsBalanceEnough finc
+IsBalanceEnough() {
+ - takes in key and needed balance - and returns true of false based on (Book and Promised)
+}
+_______________________________________________________________   generate balancebook and Promise book for a Chain
+GenerateBalanceAndPromise(SBC SyncBlockchain) {
+  - use function in canonical chain to get - the canonical blockchain then
+  - start reading from 1st height block and read all the transactions to build up balancebook and promise book
+}
+
+_______________________________________________________________ Reading all transaction of one block 
+ - get a Block 
+ - convert block to key value pairs
+ - for every key value pairs - check and update ... balancebook and promise
+
+todo //
 
 ## handlers.go
 Add data structs to Keep Balance, 
