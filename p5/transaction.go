@@ -10,20 +10,22 @@ import (
 )
 
 type Transaction struct {
-	Id        string
-	From      *PublicIdentity
-	To        *PublicIdentity //if To is empty then its a borrowing tx
-	Tokens    float64
-	Fees      float64
-	Timestamp time.Time
+	Id        string         `json:"id"`
+	From      PublicIdentity `json:"from"`
+	To        PublicIdentity `json:"to"` //if To is empty then its a borrowing tx
+	Tokens    float64        `json:"tokens"`
+	Fees      float64        `json:"fees"`
+	TxType    string         `json:"txtype"`
+	Timestamp time.Time      `json:"timestamp"`
 }
 
-func NewTransaction(from *PublicIdentity, to *PublicIdentity, tokens float64, fees float64) Transaction {
+func NewTransaction(from PublicIdentity, to PublicIdentity, tokens float64, fees float64, txType string) Transaction {
 	tx := Transaction{
 		From:      from,
 		To:        to,
 		Tokens:    tokens,
 		Fees:      fees,
+		TxType:    txType,
 		Timestamp: time.Now(),
 	}
 
@@ -33,33 +35,41 @@ func NewTransaction(from *PublicIdentity, to *PublicIdentity, tokens float64, fe
 }
 
 func (tx *Transaction) genId() string {
-	str := tx.From.PublicKey.N.String() +
-		tx.To.PublicKey.N.String() +
+	str := tx.From.PublicIdentityToJson() +
+		tx.To.PublicIdentityToJson() +
 		strconv.FormatFloat(float64(tx.Tokens), 'f', -1, 64) +
+		strconv.FormatFloat(float64(tx.Fees), 'f', -1, 64) +
+		tx.TxType +
 		tx.Timestamp.String()
 	sum := sha3.Sum256([]byte(str))
 	return hex.EncodeToString(sum[:])
 }
 
 func (tx *Transaction) Show() string {
-	str := tx.Id +
-		tx.From.PublicKey.N.String() +
-		tx.To.PublicKey.N.String() +
-		strconv.FormatFloat(float64(tx.Tokens), 'f', -1, 64) +
-		tx.Timestamp.String()
+	str := "\ntx id :" + tx.Id +
+		"\ntx From :" + tx.From.PublicIdentityToJson() +
+		"\ntx To :" + tx.To.PublicIdentityToJson() +
+		"\ntx Tokens :" + strconv.FormatFloat(float64(tx.Tokens), 'f', -1, 64) +
+		"\ntx Fees :" + strconv.FormatFloat(float64(tx.Fees), 'f', -1, 64) +
+		"\ntx Type :" + tx.TxType +
+		"\ntx Time :" + tx.Timestamp.String() + "\n"
 	return str
 }
 
-func CreateTxSig(tx Transaction, fromSid *Identity) []byte {
-	return fromSid.GenSignature(TransactionToJsonByteArray(tx))
+func (tx *Transaction) CreateTxSig(fromCid ClientId) []byte {
+	return fromCid.GenSignature(tx.TransactionToJsonByteArray())
 }
 
-func VerifyTxSig(fromPid *PublicIdentity, tx Transaction, txSig []byte) bool {
-
-	return VerifySingature(fromPid.PublicKey, TransactionToJsonByteArray(tx), txSig)
+func (tx *Transaction) CreateTxSigForMiner(fromId Identity) []byte {
+	return fromId.GenSignature(tx.TransactionToJsonByteArray())
 }
 
-func TransactionToJsonByteArray(tx Transaction) []byte {
+func VerifyTxSig(fromPid PublicIdentity, tx Transaction, txSig []byte) bool {
+
+	return VerifySingature(fromPid.PublicKey, tx.TransactionToJsonByteArray(), txSig)
+}
+
+func (tx *Transaction) TransactionToJsonByteArray() []byte {
 	txJson, err := json.Marshal(tx)
 	if err != nil {
 		log.Println("in TransactionToJsonByteArray : Error in marshalling Tx : ", err)
@@ -77,33 +87,34 @@ func (tx *Transaction) TransactionToJson() string {
 	return string(txJson)
 }
 
-func DecodeToTransaction(txJson []byte) Transaction {
+func JsonToTransaction(txJson string) Transaction {
 	tx := Transaction{}
-	err := json.Unmarshal(txJson, &tx)
+	err := json.Unmarshal([]byte(txJson), &tx)
 	if err != nil {
-		log.Println("Error in unmarshalling Transaction")
+		log.Println("Error in unmarshalling Transaction, err - ", err)
+		log.Println("String given to unmarshall Transaction, ================> \n ", txJson, "\nxxxxxxxxxxxxxxxxxxxxxxxxxxx\n")
 	}
 
 	return tx
 }
 
-func IsTransactionValid(tx Transaction, balanceBook BalanceBook) bool {
-
-	//balanceBook.Book <hash of PublicKey, Balance Amount>
-	//getting hash of public key of tx.From - to get key for balance.Book
-	//hash :=sha3.Sum256(tx.From.PublicKey.N.Bytes())
-	//hashKey := hex.EncodeToString(hash[:])
-	//using hashKey to get the Balance amount
-	//balanceStr, err := balanceBook.Book.Get(hashKey)
-	//balance, err := strconv.ParseFloat(balanceStr, 64) // todo ?? if ERR then should i make balance zero ???? !!!
-	//if err != nil {
-	//	return false
-	//}
-
-	//if  balance > tx.Tokens {
-	//	return true
-	//}
-	//return false
-
-	return balanceBook.IsBalanceEnough(balanceBook.GetKey(tx.From.PublicKey), tx.Tokens+tx.Fees)
-}
+//func IsTransactionValid(tx Transaction, balanceBook BalanceBook) bool {
+//
+//	//balanceBook.Book <hash of PublicKey, Balance Amount>
+//	//getting hash of public key of tx.From - to get key for balance.Book
+//	//hash :=sha3.Sum256(tx.From.PublicKey.N.Bytes())
+//	//hashKey := hex.EncodeToString(hash[:])
+//	//using hashKey to get the Balance amount
+//	//balanceStr, err := balanceBook.Book.Get(hashKey)
+//	//balance, err := strconv.ParseFloat(balanceStr, 64) // todo ?? if ERR then should i make balance zero ???? !!!
+//	//if err != nil {
+//	//	return false
+//	//}
+//
+//	//if  balance > tx.Tokens {
+//	//	return true
+//	//}
+//	//return false
+//
+//	return balanceBook.IsBalanceEnough(balanceBook.GetKey(tx.From.PublicKey), tx.Tokens+tx.Fees)
+//}

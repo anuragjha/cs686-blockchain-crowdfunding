@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"golang.org/x/crypto/sha3"
 
 	//"encoding/pem"
@@ -21,10 +22,10 @@ import (
 )
 
 type Identity struct {
-	privateKey *rsa.PrivateKey
-	PublicKey  *rsa.PublicKey
+	privateKey *rsa.PrivateKey `json:"privateKey"`
+	PublicKey  *rsa.PublicKey  `json:"publicKey"`
 	//HashForKey 	hash.Hash
-	Label string
+	Label string `json:"label"`
 }
 
 type PublicIdentity struct {
@@ -35,7 +36,7 @@ type PublicIdentity struct {
 
 func NewIdentity(label string) Identity {
 	id := Identity{}
-	id.privateKey, id.PublicKey = generatePubPrivKeyPair()
+	id.privateKey, id.PublicKey = GeneratePubPrivKeyPair()
 	//id.HashForKey = GenerateHashForKey(label)
 	id.Label = label
 
@@ -57,7 +58,7 @@ func (id *Identity) GetMyPrivateKey() *rsa.PrivateKey {
 }
 
 //generatePubPrivKeyPair func creates key pair pub - priv
-func generatePubPrivKeyPair() (*rsa.PrivateKey, *rsa.PublicKey) {
+func GeneratePubPrivKeyPair() (*rsa.PrivateKey, *rsa.PublicKey) {
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		log.Fatal("Couldnt generate keys - err :", err)
@@ -124,7 +125,7 @@ func VerifySingature(senderPubKey *rsa.PublicKey /*senderHashForKey hash.Hash,*/
 	hashMsg := sha3.Sum256(message)
 	err := rsa.VerifyPKCS1v15(senderPubKey, crypto.SHA256, hashMsg[:], sig)
 	if err != nil {
-		log.Println("Error in verifying : err : ", err)
+		//log.Println("Error in verifying : err : ", err)
 		return false
 	}
 	return true
@@ -151,45 +152,37 @@ func GenDigest(hash hash.Hash, message []byte) []byte {
 }
 
 //func Hello() {
-
-//i := NewIdentity("ok")
-
-//message := "Hello World !!!"
-//fmt.Println(message)
 //
-
-//epub	:= 	EncryptMessageWithPublicKey(i.HashForKey, i.PublicKey, message, i.Label)
-//dpriv 	:= 	DecryptMessageWithPrivateKey(i.HashForKey,i.privateKey, string(epub), i.Label)
-//fmt.Println("dpriv :", string(dpriv))
+//	i := NewIdentity("ok")
 //
-
-//priv, err := rsa.GenerateKey(rand.Reader, 2048)
-//if err != nil {
-//	log.Fatal("Couldnt generate keys - err :", err)
+//	message := "Hello World !!!"
+//	fmt.Println(message)
+//
+//
+//	epub	:= 	EncryptMessageWithPublicKey(i.PublicKey, message)
+//	dpriv 	:= 	DecryptMessageWithPrivateKey(i.privateKey, epub)
+//	fmt.Println("dpriv :", string(dpriv))
+//
+//
+//
 //}
-//fmt.Println("Private Key is : ", priv.D)
 
-////out := x509.MarshalPKCS1PrivateKey(priv) // out is a byte array
-//////fmt.Println("out : ", out)
-////
-////var p = &pem.Block{
-////	Type:  "RSA Private Key",
-////	Bytes: out,
-////}
-////fmt.Println("pem.Block : ", pem.EncodeToMemory(p))
+func (pid *PublicIdentity) PublicIdentityToJson() string {
+	jsonBytes, err := json.Marshal(pid)
+	if err != nil {
+		log.Println("Error in marshalling publicIdentity, err - ", err)
+		return "{}"
+	}
+	return string(jsonBytes)
+}
 
-//publicKey := &privateKey.PublicKey
-////fmt.Println("Public Key is : ", publicKey.N)
-//
-//hash1 := sha256.New()
-//encrypted, err := rsa.EncryptOAEP(hash1, rand.Reader, publicKey, []byte(message), []byte("what?"))
-//if err != nil {
-//	fmt.Println("Error in Encryption")
-//}
-////fmt.Println("encrypted : ",string(encrypted))
-//
-//
-//decrypted, err := rsa.DecryptOAEP(hash1, rand.Reader, privateKey, []byte(encrypted), []byte("what?"))
-//fmt.Println("Decrypted : ", string(decrypted))
-
-//}
+func JsonToPublicIdentity(str string) PublicIdentity {
+	pid := PublicIdentity{}
+	if len(str) > 0 {
+		err := json.Unmarshal([]byte(str), &pid)
+		if err != nil {
+			log.Println("Error in Unmarshalling publicIdentity, err - ", err)
+		}
+	}
+	return pid
+}

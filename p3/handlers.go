@@ -1,6 +1,7 @@
 package p3
 
 import (
+	//"bytes"
 	//"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -14,7 +15,7 @@ import (
 	"time"
 
 	"../p1"
-	"../p2/block"
+	b "../p2/block"
 	//"../p2"
 	"../p4"
 	"../p5"
@@ -50,8 +51,8 @@ var ifStarted bool
 
 var ID p5.Identity
 
-var BalanceBook p5.BalanceBook
-var Wallet p5.Wallet
+//var BalanceBook p5.BalanceBook
+//var Wallet p5.Wallet
 
 var TxPool p5.TransactionPool
 
@@ -87,19 +88,27 @@ func Start(w http.ResponseWriter, r *http.Request) {
 
 		SBC = data.NewBlockChain() //create new Block chain //apr4
 
+		//currency //p5 //todo p5 todo p5 CURRENCY
+		TxPool = p5.NewTransactionPool()
+		if SELF_ADDR != INIT_SERVER {
+			log.Println("Asking for Transaction Pool !!!")
+			GetTransactionPool() //initialize txPool with existing txs in Pool
+		}
+
+		//InitBalanceBook() // in handlerCurrencyHelper
+		//InitWallet()      // in handlerCurrencyHelper
+
 		if strings.Compare(SELF_ADDR, INIT_SERVER) == 0 {
 			fmt.Println("Generating Genesis block")
 			mpt := p1.MerklePatriciaTrie{}
-			mpt.Insert("First Message", "usf Crowd Funding Platform")
+			mpt.Insert("beeFunded", "{}")
 			nonce := p4.FindNonce("genesis", &mpt, Difficulty)
 			b1 := SBC.GenBlock(1, "genesis", mpt, nonce)
 			SBC.Insert(b1)
 
-		}
+			GiveGenesisTokens(ID)
 
-		//currency //p5 //todo p5 todo p5 CURRENCY
-		InitBalanceBook() // in handlerCurrencyHelper
-		InitWallet()      // in handlerCurrencyHelper
+		}
 
 		//if Peers.GetSelfId() != 6686 { //download if not 6686
 		if SELF_ADDR != INIT_SERVER {
@@ -173,7 +182,7 @@ func UploadBlock(w http.ResponseWriter, r *http.Request) {
 			returnCode204(w, r)
 		} else {
 			fmt.Println("in Handlers - UploadBlock - found = true")
-			blockJson := block.EncodeToJSON(&uBlock)
+			blockJson := b.EncodeToJSON(&uBlock)
 			_, err = fmt.Fprint(w, blockJson)
 			if err != nil {
 				log.Println("Err : in Handlers - UploadBlock - during writing response")
@@ -312,7 +321,7 @@ func processHeartBeat(heartBeat data.HeartBeatData) {
 	//and get block if the IfNewBlock is set to true
 	if heartBeat.IfNewBlock { //add block in blockchain
 
-		newBlock := block.DecodeFromJSON(heartBeat.BlockJson)
+		newBlock := b.DecodeFromJSON(heartBeat.BlockJson)
 		mptHash := p1.MerklePatriciaTrie(newBlock.Value).Root
 
 		//y := sha3.Sum256([]byte(newBlock.Header.ParentHash + newBlock.Header.Nonce + mptHash))
@@ -332,7 +341,7 @@ func processHeartBeat(heartBeat data.HeartBeatData) {
 
 				SBC.Insert(newBlock) // if parentHash exist then directly insert and POW is satisfied
 
-			} else if AskForBlock(newBlock.Header.Height-1, newBlock.Header.ParentHash, make([]block.Block, 0) /*, SBC.GetLength(), newBlock.Header.Height-1*/) {
+			} else if AskForBlock(newBlock.Header.Height-1, newBlock.Header.ParentHash, make([]b.Block, 0) /*, SBC.GetLength(), newBlock.Header.Height-1*/) {
 				//if parent cannot be found then ask for parent blocks and insert all parent then insert newBlock
 				SBC.Insert(newBlock)
 				//AskForBlock(newBlock.Header.Height, newBlock.Header.ParentHash, make([]block.Block, 0), SBC.GetLength()+1, newBlock.Header.Height+1)
@@ -382,7 +391,7 @@ func updatePeerList(heartBeat *data.HeartBeatData) {
 }
 
 // AskForBlock - Ask another server to return a block of certain height and hash
-func AskForBlock(height int32, hash string, blockHolder []block.Block) bool {
+func AskForBlock(height int32, hash string, blockHolder []b.Block) bool {
 
 	//found := false
 	Peers.Rebalance()
@@ -409,7 +418,7 @@ func AskForBlock(height int32, hash string, blockHolder []block.Block) bool {
 				continue
 			}
 
-			reqBlock := block.DecodeFromJSON(string(body))
+			reqBlock := b.DecodeFromJSON(string(body))
 			//fmt.Println("\n in AskForBlock : reqBlock", reqBlock, "\n")
 
 			if SBC.CheckParentHash(reqBlock) {
@@ -493,7 +502,7 @@ func tryingNonces( /*parentHash string, mpt *p1.MerklePatriciaTrie, */ difficult
 
 	// y = SHA3(parentHash + nonce + mptRootHash)
 
-	var parentBlock block.Block
+	var parentBlock b.Block
 	var parentHash string
 	var mpt p1.MerklePatriciaTrie
 
@@ -508,9 +517,17 @@ func tryingNonces( /*parentHash string, mpt *p1.MerklePatriciaTrie, */ difficult
 			parentBlock = SBC.GetLatestBlocks()[0] //[rand.Int()%len(SBC.GetLatestBlocks())]//random parent from blocks at latest height
 			parentHash = parentBlock.Header.Hash
 			tryingForHeight = parentBlock.Header.Height + 1
-			fmt.Println("in tryingNonces : parentHash : ", parentHash)
+
 			//mpt = p1.GenerateRandomMPT() //pow
 			mpt = GenerateTransactionsMPT() // txs in Mpt for p5
+			fmt.Println("in tryingNonces : parentHash : ", parentHash)
+			keyValPair := mpt.GetAllKeyValuePairs()
+			if len(keyValPair) == 0 {
+				GetNewParent = true
+				time.Sleep(3 * time.Second)
+				continue
+			}
+
 			nonce = p4.InitializeNonce(8)
 
 		}
@@ -519,7 +536,7 @@ func tryingNonces( /*parentHash string, mpt *p1.MerklePatriciaTrie, */ difficult
 			//generate block send heartbeat (blockBeat)
 			SendBlockBeat(tryingForHeight, parentHash, nonce, mpt)
 
-			MarkTxInTxPoolAsUsed(mpt) // marking transaction true(used in block)
+			//MarkTxInTxPoolAsUsed(mpt) // marking transaction true(used in block) //todo
 
 			GetNewParent = true
 		}
@@ -548,7 +565,7 @@ func SendBlockBeat(height int32, parentHash string, nonce string, mpt p1.MerkleP
 
 	b1 := SBC.GenBlock(height, parentHash, mpt, nonce)
 	SBC.Insert(b1)
-	blockJson := block.EncodeToJSON(&b1)
+	blockJson := b.EncodeToJSON(&b1)
 
 	peerMapPid := Peers.CopyPids()
 	PeerMapPidJson, err := data.PeerMapPidToJson(peerMapPid) //p5
@@ -591,7 +608,19 @@ func ShowWallet(w http.ResponseWriter, r *http.Request) {
 }
 
 func ShowBalanceBook(w http.ResponseWriter, r *http.Request) {
-	_, err := fmt.Fprintf(w, "%s\n", BalanceBook.Show())
+
+	bb := p5.NewBalanceBook()
+	chain := p4.GetCanonicalChains(&SBC)
+	bb.BuildBalanceBook(chain[0], 2)
+
+	str := "Balance Book \n"
+	for key, value := range bb.Book.GetAllKeyValuePairs() {
+		str += "\n" + key + "\t\t" + value
+	}
+
+	fmt.Printf("\nIn ShowBalanceBook \n %s\n", str)
+
+	_, err := fmt.Fprintf(w, "%s\n", str /*bb.Show()*/)
 	if err != nil {
 		log.Println("Err in ShowWallet func while writing response")
 	}
@@ -604,77 +633,83 @@ func ShowTransactionPool(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Transaction(w http.ResponseWriter, r *http.Request) { //todo
+////Transaction func takes http request POST /transaction - checks if the transaction is valid and adds to its TxPool - sendTXBeat
+//func Transaction(w http.ResponseWriter, r *http.Request) {
+//
+//	body, err := ioutil.ReadAll(r.Body)
+//	if err != nil {
+//		log.Println("Err : in HeartBeatReceive - reached err of ioutil.ReadAll -")
+//		log.Println(err)
+//	}
+//	defer r.Body.Close()
+//
+//	tx := p5.DecodeToTransaction(body)
+//
+//	//check if transaction is valid
+//	if p5.IsTransactionValid(tx, BalanceBook) {
+//		//put transaction in Txpool
+//		TxPool.AddToTransactionPool(tx)
+//	}
+//
+//	go sendTxBeat(tx)
+//
+//}
+//
+//// sendTxBeat func takes a transaction and sends to its peer list
+//func sendTxBeat(tx p5.Transaction) {
+//	//send TransactionBeat
+//	txBeat := p5.PrepareTransactionBeat(tx, &ID)
+//
+//	Peers.Rebalance()
+//	peerMap := Peers.Copy()
+//	//list over peers and send them heartBeat
+//	if len(peerMap) > 0 {
+//		for peerAddr := range peerMap {
+//			_, _ = http.Post(peerAddr+"/txbeat/receive", "application/json; charset=UTF-8",
+//				strings.NewReader(txBeat.EncodeToJson()))
+//		}
+//	}
+//}
 
-	body, err := ioutil.ReadAll(r.Body)
+// called when /showBlockMpt/{height}/{hash} is called
+func ShowBlockMpt(w http.ResponseWriter, r *http.Request) {
+	log.Println("In ShowBlockMpt")
+	vars := mux.Vars(r)
+	ubHeight, err := strconv.Atoi(vars["height"])
 	if err != nil {
-		log.Println("Err : in HeartBeatReceive - reached err of ioutil.ReadAll -")
-		log.Println(err)
-	}
-	defer r.Body.Close()
+		returnCode500(w, r)
+	} else {
+		//ubHash := vars["hash"]
+		//fmt.Println("\nuploading block of -\nubHeight : ", ubHeight)
+		//fmt.Println("ubHash : ", ubHash, "\n\n")
 
-	tx := p5.DecodeToTransaction(body)
+		//uBlock, found := SBC.GetBlock(int32(ubHeight), ubHash)
+		uBlocks, found := SBC.Get(int32(ubHeight))
+		if found == false {
+			fmt.Println("Err : in Handlers - ShowBlockMpt - found = false - 204")
+			returnCode204(w, r)
+		} else {
+			fmt.Println("in Handlers - ShowBlockMpt - found = true")
 
-	//check if transaction is valid
-	if p5.IsTransactionValid(tx, BalanceBook) {
-		//put transaction in Txpool
-		TxPool.AddToTransactionPool(tx)
-	}
+			//use uBlock to get all key value pairs
+			blk := b.Block(uBlocks[0])
+			mpt := p1.MerklePatriciaTrie(blk.Value)
+			keyValuePairs := mpt.GetAllKeyValuePairs()
+			var outputBuilder strings.Builder
+			outputBuilder.WriteString(blk.Header.Hash + "\n")
+			for key, value := range keyValuePairs {
+				//fmt.Fprintf(&outputBuilder, "%s :", key)
+				//fmt.Fprintf(&outputBuilder, ": %s\n", value)
+				outputBuilder.WriteString("\n" + "key=>" + key + "\n value=>" + value + "\n")
+			}
 
-	go sendTxBeat(tx)
-
-}
-
-func sendTxBeat(tx p5.Transaction) {
-	//send TransactionBeat
-	txBeat := p5.PrepareTransactionBeat(tx, &ID)
-
-	Peers.Rebalance()
-	peerMap := Peers.Copy()
-	//list over peers and send them heartBeat
-	if len(peerMap) > 0 {
-		for peerAddr := range peerMap {
-			_, _ = http.Post(peerAddr+"/txbeat/receive", "application/json; charset=UTF-8",
-				strings.NewReader(txBeat.EncodeToJson()))
-		}
-	}
-}
-
-func TransactionBeatRecv(w http.ResponseWriter, r *http.Request) { //todo
-
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Println("Err : in TransactionBeatRecv - reached err of ioutil.ReadAll -")
-		log.Println(err)
-	}
-	defer r.Body.Close()
-
-	txBeat := p5.DecodeToTransactionBeat(body)
-
-	//if txBeat.VerifyTxBeat() { //TxSig match in Beat
-	if p5.VerifyTxSig(txBeat.Tx.From, txBeat.Tx, txBeat.TxSig) {
-		//check if transaction is valid
-		if p5.IsTransactionValid(txBeat.Tx, BalanceBook) { //checks both book and amt promised
-			//put transaction in Txpool
-			TxPool.AddToTransactionPool(txBeat.Tx)
-
-			go forwardTxBeat(txBeat)
-		}
-	}
-}
-
-func forwardTxBeat(txBeat p5.TransactionBeat) {
-	//forward TransactionBeat
-	txBeat.Hops--
-	if txBeat.Hops > 0 {
-		Peers.Rebalance()
-		peerMap := Peers.Copy()
-		//list over peers and send them heartBeat
-		if len(peerMap) > 0 {
-			for peerAddr := range peerMap {
-				_, _ = http.Post(peerAddr+"/txbeat/receive", "application/json; charset=UTF-8",
-					strings.NewReader(txBeat.EncodeToJson()))
+			//blockJson := block.EncodeToJSON(&uBlock)
+			//_, err = fmt.Fprint(w, blockJson)
+			_, err = fmt.Fprint(w, outputBuilder.String())
+			if err != nil {
+				log.Println("Err : in Handlers - ShowBlockMpt - during writing response")
 			}
 		}
 	}
+
 }

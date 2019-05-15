@@ -10,13 +10,13 @@ import (
 
 	"golang.org/x/crypto/sha3"
 
-	"./block"
+	b "./block"
 )
 
 // Blockchain struct defines the Blockchain
 type Blockchain struct {
-	Chain  map[int32][]block.Block `json:"chain"`  //map, key - Height and Value - list of Blocks at this height
-	Length int32                   `json:"length"` //equals to the highest block height
+	Chain  map[int32][]b.Block `json:"chain"`  //map, key - Height and Value - list of Blocks at this height
+	Length int32               `json:"length"` //equals to the highest block height
 }
 
 // BlockchainJson struct for json
@@ -26,20 +26,20 @@ type BlockchainJson struct {
 
 //Initial func initializes the
 func (blockchain *Blockchain) Initial() {
-	blockchain.Chain = map[int32][]block.Block{}
+	blockchain.Chain = map[int32][]b.Block{}
 	blockchain.Length = 0
 }
 
 //NewBlockChain func returns a new Blockchain
 func NewBlockchain() Blockchain {
 	return Blockchain{
-		Chain:  make(map[int32][]block.Block),
+		Chain:  make(map[int32][]b.Block),
 		Length: 0,
 	}
 }
 
 // Get func takes height and returns list of blocks at this height
-func (blockchain *Blockchain) Get(height int32) ([]block.Block, bool) {
+func (blockchain *Blockchain) Get(height int32) ([]b.Block, bool) {
 	if height > 0 && blockchain.Length >= height { //sun
 		return blockchain.Chain[height], true
 	}
@@ -47,7 +47,7 @@ func (blockchain *Blockchain) Get(height int32) ([]block.Block, bool) {
 }
 
 // Insert func takes a block, use the height to insert blockhash , but ignore if hash alrady present
-func (blockchain *Blockchain) Insert(block block.Block) {
+func (blockchain *Blockchain) Insert(block b.Block) {
 
 	blockHeight := block.Header.Height
 	isValidBlock := false
@@ -73,7 +73,7 @@ func (blockchain *Blockchain) Insert(block block.Block) {
 }
 
 // Insert func takes a block, use the height to insert blockhash , but ignore if hash alrady present
-func (blockchain *Blockchain) UnsafeInsert(block block.Block) {
+func (blockchain *Blockchain) UnsafeInsert(block b.Block) {
 
 	blockHeight := block.Header.Height
 	//isValidBlock := false
@@ -99,7 +99,7 @@ func (blockchain *Blockchain) UnsafeInsert(block block.Block) {
 }
 
 //genesis func creates the 1st block of blockchain
-func genesis(blockchain *Blockchain, block block.Block, blockHeight int32) bool {
+func genesis(blockchain *Blockchain, block b.Block, blockHeight int32) bool {
 	blockchain.Chain[blockHeight] = append(blockchain.Chain[blockHeight], block)
 	blockchain.Length++
 	// fmt.Println("GENESIS")
@@ -107,7 +107,7 @@ func genesis(blockchain *Blockchain, block block.Block, blockHeight int32) bool 
 }
 
 //addLength function adds a block such that it increases the length of block
-func addLength(blockchain *Blockchain, block block.Block, blockHeight int32) bool {
+func addLength(blockchain *Blockchain, block b.Block, blockHeight int32) bool {
 	//fmt.Println("in Blockchain.go - addLength")
 	blockchain.Chain[blockHeight] = append(blockchain.Chain[blockHeight], block)
 	blockchain.Length = blockHeight
@@ -116,7 +116,7 @@ func addLength(blockchain *Blockchain, block block.Block, blockHeight int32) boo
 }
 
 //addFork method adds a block at previously known height
-func addFork(blockchain *Blockchain, block block.Block, blockHeight int32) bool {
+func addFork(blockchain *Blockchain, block b.Block, blockHeight int32) bool {
 	//fmt.Println("in Blockchain.go - addFork")
 	blockList := blockchain.Chain[blockHeight]
 
@@ -152,7 +152,7 @@ func EncodeToJSON(blockchain *Blockchain) string {
 		height := i
 		for _, v := range blockchain.Chain[height] {
 			thisBlock := v
-			jsonStringBlockchain += block.EncodeToJSON(&thisBlock) + ","
+			jsonStringBlockchain += b.EncodeToJSON(&thisBlock) + ","
 		}
 	}
 	jsonStringBlockchain = jsonStringBlockchain[:len(jsonStringBlockchain)-1]
@@ -163,14 +163,14 @@ func EncodeToJSON(blockchain *Blockchain) string {
 // DecodeFromJSON func takes a blockchain instance and a jsonString as input and
 // decodes jsonString into type blockchain
 func DecodeFromJSON(blockchain *Blockchain, jsonString string) {
-	blockJsonList := []block.BlockJson{}
+	blockJsonList := []b.BlockJson{}
 
 	jerr := json.Unmarshal([]byte(jsonString), &blockJsonList)
 	if jerr == nil {
 		for i := range blockJsonList {
 			jsonBlockByteArray, jerr := json.Marshal(blockJsonList[i])
 			if jerr == nil {
-				newBlock := block.DecodeFromJSON(string(jsonBlockByteArray))
+				newBlock := b.DecodeFromJSON(string(jsonBlockByteArray))
 				blockchain.Insert(newBlock)
 			}
 
@@ -182,11 +182,11 @@ func DecodeFromJSON(blockchain *Blockchain, jsonString string) {
 }
 
 //GetLatestBlocks
-func (blockchain *Blockchain) GetLatestBlocks() []block.Block {
+func (blockchain *Blockchain) GetLatestBlocks() []b.Block {
 	return blockchain.Chain[blockchain.Length]
 }
 
-func (blockchain *Blockchain) GetParentBlock(blk block.Block) block.Block {
+func (blockchain *Blockchain) GetParentBlock(blk b.Block) b.Block {
 	if blocks, ok := blockchain.Get(blk.Header.Height - 1); ok {
 		for _, pblk := range blocks {
 			if reflect.DeepEqual(pblk.Header.Hash, blk.Header.ParentHash) {
@@ -194,7 +194,7 @@ func (blockchain *Blockchain) GetParentBlock(blk block.Block) block.Block {
 			}
 		}
 	}
-	return block.Block{}
+	return b.Block{}
 
 }
 

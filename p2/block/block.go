@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"../../p1"
+	"../../p5"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -18,6 +19,7 @@ type Head struct {
 	ParentHash string //`json:"parenthash"`
 	Size       int32  // `json:"parenthash"`
 	Nonce      string //'json:"nonce"'
+	Miner      p5.PublicIdentity
 }
 
 // Block struct defines the block

@@ -1,7 +1,12 @@
 package p5
 
 import (
+	//"../p1"
+	//"../p2"
+	//b "../p2/block"
+	//"crypto/rsa"
 	"fmt"
+	//"golang.org/x/crypto/sha3"
 	"sync"
 )
 
@@ -15,38 +20,62 @@ import (
 const TOKENUNIT = "pingala"
 
 type Wallet struct {
-	Balance map[string]float64
+	Balance float64
+	Unit    string
 	mux     sync.Mutex
 }
 
 func NewWallet() Wallet {
-	balance := make(map[string]float64, 1)
-	balance[TOKENUNIT] = 0
+	//balance := make(map[string]float64, 1)
+	//balance[TOKENUNIT] = 0
 
 	//balance[TokenUNIT] = 1001
 
 	return Wallet{
-		Balance: balance,
+		Balance: 0,
+		Unit:    TOKENUNIT,
 	}
 }
 
-func (w *Wallet) Add(value float64) {
+func (w *Wallet) Update(value float64) {
 	w.mux.Lock()
 	defer w.mux.Unlock()
 
-	w.Balance[TOKENUNIT] = w.Balance[TOKENUNIT] + value
-
-}
-
-func (w *Wallet) Subtract(value float64) {
-	w.mux.Lock()
-	defer w.mux.Unlock()
-
-	w.Balance[TOKENUNIT] = w.Balance[TOKENUNIT] - value
+	w.Balance = w.Balance + value
 
 }
 
 func (w *Wallet) Show() string {
-	return "Wallet : \n" + fmt.Sprintf("%f", w.Balance[TOKENUNIT]) + TOKENUNIT
+	return "Wallet : \n" + fmt.Sprintf("%f", w.Balance) + w.Unit
 	//return showStr
 }
+
+//
+//func BuildWallet(chains []p2.Blockchain, walletKey string) Wallet {
+//
+//	//walletKey := sha3.Sum256()
+//
+//	//btx := NewBorrowingTransactions()
+//	//wallet := NewWallet()
+//	//loop over the blockchain[00 of chains
+//	var i int32
+//	if len(chains) > 0 {
+//		for i =1; i<= chains[0].Length; i++ {
+//			blks, found := chains[0].Get(i)
+//			if found && len(blks) > 0 {
+//				blk := b.Block(blks[0])
+//				mpt := p1.MerklePatriciaTrie(blk.Value)
+//				keyValuePairs := mpt.GetAllKeyValuePairs()  //key - txid value - txJson
+//				//loop over all key valye pairs and collect borrowing txs
+//				for _, txjson := range keyValuePairs {
+//					tx := JsonToTransaction([]byte(txjson))
+//					if tx.To ==
+//
+//				}
+//			}
+//		}
+//	}
+//
+//	return btx
+//
+//}

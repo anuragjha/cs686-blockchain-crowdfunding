@@ -8,12 +8,12 @@ import (
 
 type TransactionBeat struct {
 	Tx      Transaction
-	FromPid *PublicIdentity
+	FromPid PublicIdentity
 	TxSig   []byte
 	Hops    int
 }
 
-func NewTransactionBeat(tx Transaction, fromPid *PublicIdentity, fromSig []byte) TransactionBeat {
+func NewTransactionBeat(tx Transaction, fromPid PublicIdentity, fromSig []byte) TransactionBeat {
 	return TransactionBeat{
 		Tx:      tx,
 		TxSig:   fromSig,
@@ -22,14 +22,14 @@ func NewTransactionBeat(tx Transaction, fromPid *PublicIdentity, fromSig []byte)
 	}
 }
 
-func PrepareTransactionBeat(tx Transaction, sid *Identity) TransactionBeat {
+func PrepareTransactionBeat(tx Transaction, cid ClientId) TransactionBeat {
 
-	pid := sid.GetMyPublicIdentity()
+	pid := cid.GetMyPublicIdentity()
 
 	return TransactionBeat{
 		Tx:      tx,
-		TxSig:   CreateTxSig(tx, sid),
-		FromPid: &pid,
+		TxSig:   tx.CreateTxSig(cid),
+		FromPid: pid,
 		Hops:    1,
 	}
 }
