@@ -50,7 +50,7 @@ BalanceBook is a struct which contains Book (a Key- value to store hash(PublicId
 1. Then we get a canonical chain and iterate over each block starting from the initial height.
 2. Inside each block, iterate over transaction stored in mpt. 
 3. Based on the transactions start building the book and also build Promised. 
-Book is a key - value stor of  hash(PublicKey) - Balance sum of tokens.
+Book is a key - value store of  hash(PublicKey) - Balance sum of tokens.
 Promised is a key - value store of TransactionId - Borrowing Transaction. Borrowing Transaction is structutre that contains
  a. Initial Requirement Transaction
  b. Array of Promise Transaction
