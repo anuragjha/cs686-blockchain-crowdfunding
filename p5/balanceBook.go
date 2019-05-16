@@ -329,9 +329,9 @@ func (bb *BalanceBook) Show() string {
 func (bb *BalanceBook) ShowPromised() string {
 	str := ""
 	for _, btx := range bb.Promised {
-		str += ">>---> BTX : " + btx.BorrowingTxId + " of amt : " + fmt.Sprintf("%f", btx.BorrowingTx.Tokens) + " " + TOKENUNIT + "\n"
+		str += "#  Asked sum : >>---> " + btx.BorrowingTxId + " of amt : " + fmt.Sprintf("%f", btx.BorrowingTx.Tokens) + " " + TOKENUNIT + "\n"
 		for _, promise := range btx.PromisesMade {
-			str += "\nand  PTXs are : " + promise.From.Label + " has promised : " + fmt.Sprintf("%f", promise.Tokens) + " " + TOKENUNIT + "\n"
+			str += "\n-->   Promised sum -> " + promise.From.Label + " has promised : " + fmt.Sprintf("%f", promise.Tokens) + " " + TOKENUNIT + " #  \n"
 		}
 	}
 	return str
