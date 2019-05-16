@@ -9,7 +9,17 @@ import (
 type BorrowingTransaction struct {
 	BorrowingTxId string
 	BorrowingTx   Transaction
-	Promised      map[string]Transaction // key - transaction id (Lending)
+	PromisesMade  []Transaction // key - transaction id (Lending) // todo todo -- changed from map to array -- check start here
+}
+
+func NewBorrowingTransaction(tx Transaction) BorrowingTransaction {
+	bt := BorrowingTransaction{}
+	bt.BorrowingTxId = tx.Id
+	bt.BorrowingTx = tx
+	bt.PromisesMade = make([]Transaction, 1)
+
+	return bt
+
 }
 
 type BorrowingTransactions struct {
@@ -37,7 +47,7 @@ func BuildBorrowingTransactions(chains []p2.Blockchain) BorrowingTransactions {
 				//loop over all key valye pairs and collect borrowing txs
 				for _, txjson := range keyValuePairs {
 					tx := JsonToTransaction(txjson)
-					if tx.To.Label == "" && tx.Tokens > 0 && tx.TxType != "start" && tx.TxType != "default" && tx.From.Label != "" {
+					if tx.To.Label == "" && tx.ToTxId == "" && tx.Tokens > 0 && tx.TxType != "start" && tx.TxType != "default" && tx.From.Label != "" {
 						btx.BorrowingTxs[tx.Id] = tx
 					}
 

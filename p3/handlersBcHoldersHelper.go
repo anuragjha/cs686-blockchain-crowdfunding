@@ -177,14 +177,15 @@ func TransactionBeatRecv(w http.ResponseWriter, r *http.Request) {
 
 	if p5.VerifyTxSig(txBeat.Tx.From, txBeat.Tx, txBeat.TxSig) { //todo
 		//check if transaction is valid
-		//if p5.IsTransactionValid(txBeat.Tx, BalanceBook) { //checks both book and amt promised //todo
-		//put transaction in Txpool
+		if txBeat.Tx.Tokens != 0 {
+			//if p5.IsTransactionValid(txBeat.Tx, BalanceBook) { //checks both book and amt promised //todo
+			//put transaction in Txpool
+			log.Println("In TransactionBeatRecv - Signature verified !!!!!!!!!!!!!!!!!!!")
+			TxPool.AddToTransactionPool(txBeat.Tx)
 
-		TxPool.AddToTransactionPool(txBeat.Tx)
+			go forwardTxBeat(txBeat)
 
-		go forwardTxBeat(txBeat)
-
-		//	}
+		}
 	}
 
 	pid := txBeat.FromPid
@@ -244,7 +245,7 @@ func TransactionPoolRecv(w http.ResponseWriter, r *http.Request) {
 }
 
 func GiveDefaultTokens(cid p5.ClientId) {
-	tx := p5.NewTransaction(ID.GetMyPublicIdentity(), cid.GetMyPublicIdentity(), "", 1000, 100, "default")
+	tx := p5.NewTransaction(ID.GetMyPublicIdentity(), cid.GetMyPublicIdentity(), "", 1000, 0, "default")
 	TxPool.AddToTransactionPool(tx)
 
 	//txBeat := p5.NewTransactionBeat(tx, ID.GetMyPublicIdentity(), tx.CreateTxSigForMiner(ID))

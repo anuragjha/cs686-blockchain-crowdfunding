@@ -171,9 +171,27 @@ func TransactionForm(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error in Amount conversion : err - ", err)
 	}
 
-	tx := p5.NewTransaction(fromVal, toVal, toTxId, amountVal, feesVal, "")
+	var tx p5.Transaction
 
-	txBeat := p5.NewTransactionBeat(tx, fromVal, tx.CreateTxSig(CID)) //todo - add signature
+	log.Println("================================")
+
+	if toVal.Label == "" && toTxId == "" {
+		tx = p5.NewTransaction(fromVal, toVal, toTxId, amountVal, feesVal, "req")
+		log.Println("================================ Requirement Tx")
+	} else if toTxId != "" {
+		tx = p5.NewTransaction(fromVal, toVal, toTxId, amountVal, feesVal, "promise")
+		log.Println("================================ Promise Tx")
+	} else {
+		tx = p5.NewTransaction(fromVal, toVal, toTxId, amountVal, feesVal, "")
+		log.Println("================================ Normal Tx")
+	}
+
+	log.Println("================================ toVal.Label : ", toVal.Label)
+	log.Println("================================ toTxId : ", toTxId, " = ", tx.ToTxId)
+	log.Println("================================ toTxId : ", tx.TxType)
+	log.Println("================================")
+
+	txBeat := p5.NewTransactionBeat(tx, fromVal, tx.CreateTxSig(CID))
 	txBeatJson := txBeat.EncodeToJsonByteArray()
 
 	var resp *http.Response

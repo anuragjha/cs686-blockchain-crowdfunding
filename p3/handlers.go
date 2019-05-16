@@ -613,14 +613,29 @@ func ShowBalanceBook(w http.ResponseWriter, r *http.Request) {
 	chain := p4.GetCanonicalChains(&SBC)
 	bb.BuildBalanceBook(chain[0], 2)
 
-	str := "Balance Book \n"
+	str := "Balance Book :\n"
 	for key, value := range bb.Book.GetAllKeyValuePairs() {
 		str += "\n" + key + "\t\t" + value
 	}
-
+	str += "\n\n"
+	//
+	//str += "\n\nPromised :\n"
+	//for _, btx := range bb.Promised {
+	//
+	//	log.Println("In ShowBalanceBook - Borrowing tx - ",btx.BorrowingTxId)
+	//	tokensNeeded := fmt.Sprintf("%f", btx.BorrowingTx.Tokens)
+	//	str += "Borrowing Tx : "+ btx.BorrowingTxId + " -> "+ "required amount : " + tokensNeeded +"\n"
+	//
+	//	for _, ptx := range btx.PromisesMade {
+	//
+	//		log.Println("In ShowBalanceBook - Promise made by "+ ptx.From.Label +"  of -->  ",ptx.Tokens)
+	//		str +="\t\t" + "Promise made by "+ ptx.From.Label +" of -->  " + strconv.FormatFloat(ptx.Tokens, 'f', 6, 64) + p5.TOKENUNIT + "\n"
+	//	}
+	//}
+	str += bb.ShowPromised()
 	fmt.Printf("\nIn ShowBalanceBook \n %s\n", str)
 
-	_, err := fmt.Fprintf(w, "%s\n", str /*bb.Show()*/)
+	_, err := fmt.Fprint(w, str)
 	if err != nil {
 		log.Println("Err in ShowWallet func while writing response")
 	}
