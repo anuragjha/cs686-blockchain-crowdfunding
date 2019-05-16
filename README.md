@@ -1,5 +1,16 @@
 # cs686_BlockChain_P5 - Lending system (such as crowd funding platform)
 
+# Application has following features
+1. Client can 'ask' for a sum of tokens.
+2. This 'ask' request is share among newtork users
+3. Clients can choose a 'ask' request and 'promise' and make a promise for a sum of money.
+4. All previous promises for the specific 'ask' request are tracked, and if the sum of promises mount to 'asked' tokens, then money is transferred for appropriate users.
+
+Additionally, clients can also use peer to peer token transfer.
+
+Available balance is different from Actual balance. Available balance takes into account the sum of tokens already promised.
+Available balance is used for checking validity of transaction.
+
 
 # (1) Crypto 
 Achieving data integrity by use of Signature.
