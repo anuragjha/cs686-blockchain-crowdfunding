@@ -201,5 +201,43 @@ POST /transactionBeatRecv
   req body should contain TransactionBeat( {Tx, FromPid, TxSignature, Hops} ) 
 
 
+========================================================================================
+========================================================================================
+=====================================Client=============================================
+========================================================================================
+========================================================================================
 
+starts normal but do not call the start api
+Instead calls GET /cover api - which shows the starting page for client - func startClient()
+then client can signup to get a key pair 
+then store it.
+After that client cal login by pasting the whole thing as -key- and -addr- and then send to any miner (for now 6686)
+The miner will verify if it - if verified send the peerlist to the client. - and show Client Page (where client interacts)
+
+data structres a Client will have ->
+  - ClientId
+  - SELF_ADDR from Init function
+  - use here Peers of type PeerList
+  
+
+
+
+============================
+two miners - tx beat  - 2 conditions
+1. miner new - ask for txPool
+2. miner old - real time communicate new transaction
+
+when 2 miners exist - client will have two miners in bcHolders
+
+------
+keyValuePairs := p1.MerklePatriciaTrie(b.Block(uBlock).Value).GetAllKeyValuePairs()
+------
+
+when somebody signup - miner will initiate a default tx of 1000
+
+--> . Have to test - when sender sends more than they have
+--> . Have to Add Towards Txid - promise requirement
+--> . Now adding miner in Block and Fees
+
+Arrray - 
 
