@@ -32,7 +32,10 @@ There are two actors defined for the system, Miners and Clients.
 
 ## How to run the application
 Miner and Client both uses the same initial command, with cmdline params as port number on which it wants to run on.
+
 Miners use GET /start to begin mining process
+1. miner new - ask for txPool
+2. miner old - real time communicate new transaction
 
 Clients use GET / to initiate client functionality
 Client use /signup to get a key-value pair, Client use GET /cidpage to enter key-pair
@@ -40,8 +43,9 @@ After than during login use the same key pair to prove authenticity
 Once logged in clients can initiate a ask transaction or a promise transaction, can also send tokens directly to peer.
 
 
+# Majors features of the Application
 
-# (1) Crypto 
+## (1) Crypto 
 Achieving data integrity by use of Signature.
 
 ## security.go
@@ -102,7 +106,7 @@ HeartBeat send and Receieve now additionally deals with Signature of sender and 
 (Have to add functionality to send encrypted blockjson and decrypt blockjson - in handler.go (funcs available in security.go))
 
 
-# (2) Currency
+## (2) Currency
 Adding mechanism to enable comodity(digital token) to be exchanged between peers.
 
 Peers have 1000 in begining by default for now.
@@ -273,11 +277,10 @@ when 2 miners exist - client will have two miners in bcHolders
 keyValuePairs := p1.MerklePatriciaTrie(b.Block(uBlock).Value).GetAllKeyValuePairs()
 ------
 
-when somebody signup - miner will initiate a default tx of 1000
+When somebody signup - miner will initiate a default tx of 1000
 
---> . Have to test - when sender sends more than they have
---> . Have to Add Towards Txid - promise requirement
---> . Now adding miner in Block and Fees
+Added functionality to handle - when sender sends more than they have
+Add functionality to find promised amount for any ask req
 
-Arrray - 
+
 
