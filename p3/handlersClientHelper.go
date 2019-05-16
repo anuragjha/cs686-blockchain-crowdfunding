@@ -158,7 +158,11 @@ func TransactionForm(w http.ResponseWriter, r *http.Request) {
 	fromVal := CID.GetMyPublicIdentity()                                             //r.FormValue("from")
 	log.Println("in TransactionForm - FromValue : ", fromVal.PublicIdentityToJson()) //empth here
 	//fromVal := p5.JsonToPublicIdentity(fromValue)
-	toVal := p5.JsonToPublicIdentity(r.FormValue("to"))
+	toFormValue := r.FormValue("topid")
+	log.Println()
+	toVal := p5.JsonToPublicIdentity(toFormValue)
+	fmt.Println("HEHAAH : ", toFormValue)
+	fmt.Println("HEHAAH : ", toVal.Label)
 	toTxId := r.FormValue("txid")
 
 	amountVal, err := strconv.ParseFloat(r.FormValue("amount"), 64)
@@ -175,13 +179,14 @@ func TransactionForm(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("================================")
 
-	if toVal.Label == "" && toTxId == "" {
+	if toVal.Label == "" && toTxId == "" && amountVal >= 0 && feesVal >= 0 {
 		tx = p5.NewTransaction(fromVal, toVal, toTxId, amountVal, feesVal, "req")
 		log.Println("================================ Requirement Tx")
-	} else if toTxId != "" {
+	} else if toTxId != "" && amountVal >= 0 && feesVal >= 0 {
+
 		tx = p5.NewTransaction(fromVal, toVal, toTxId, amountVal, feesVal, "promise")
 		log.Println("================================ Promise Tx")
-	} else {
+	} else if amountVal >= 0 && feesVal >= 0 {
 		tx = p5.NewTransaction(fromVal, toVal, toTxId, amountVal, feesVal, "")
 		log.Println("================================ Normal Tx")
 	}
@@ -202,20 +207,12 @@ func TransactionForm(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	defer resp.Body.Close()
 	respBody, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
 	if err != nil {
-		log.Println("in TransactionForm - Error in reading response ffrom bcHolder")
+		log.Println("in TransactionForm - Error in reading response from bcHolder")
 	}
 	fmt.Fprint(w, string(respBody))
-}
-
-func AskForBcHolders() {
-
-}
-
-func BcHoldersRecv(w http.ResponseWriter, r *http.Request) {
-
 }
 
 func CIDPage(w http.ResponseWriter, r *http.Request) {
@@ -236,5 +233,16 @@ func SetCID(w http.ResponseWriter, r *http.Request) {
 		CID = cid
 	}
 
-	fmt.Fprint(w, string(CID.ClientIdToJsonByteArray()))
+	pid := CID.GetMyPublicIdentity()
+	pidJsonString := pid.PublicIdentityToJson()
+	str := "CID :\n" + string(CID.ClientIdToJsonByteArray()) + "\n\nPID :\n" + pidJsonString
+	_, _ = fmt.Fprint(w, str)
+	//GetMyId(w,r)
+}
+
+func GetMyId(w http.ResponseWriter, r *http.Request) {
+	pid := CID.GetMyPublicIdentity()
+	pidJsonString := pid.PublicIdentityToJson()
+	fmt.Fprint(w, pidJsonString)
+
 }

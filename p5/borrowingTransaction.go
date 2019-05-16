@@ -4,18 +4,23 @@ import (
 	"../p1"
 	"../p2"
 	b "../p2/block"
+	"encoding/json"
+	"log"
 )
 
 type BorrowingTransaction struct {
-	BorrowingTxId string
-	BorrowingTx   Transaction
-	PromisesMade  []Transaction // key - transaction id (Lending) // todo todo -- changed from map to array -- check start here
+	BorrowingTxId string        `json:"borrowingtxid"`
+	BorrowingTx   Transaction   `json:"borrowingtx"`
+	PromisesMade  []Transaction `json:"promisesmade"` // key - transaction id (Lending) // todo todo -- changed from map to array -- check start here
+	PromisedValue float64       `json:"promisedvalue"`
 }
 
 func NewBorrowingTransaction(tx Transaction) BorrowingTransaction {
 	bt := BorrowingTransaction{}
 	bt.BorrowingTxId = tx.Id
 	bt.BorrowingTx = tx
+	bt.PromisedValue = 0.0
+	bt.PromisesMade = make([]Transaction, 0)
 
 	return bt
 
@@ -23,11 +28,13 @@ func NewBorrowingTransaction(tx Transaction) BorrowingTransaction {
 
 type BorrowingTransactions struct {
 	BorrowingTxs map[string]Transaction // key - BorrowingTxId value - txJson
+	Borrower     map[string]string      //json of pid of borrower
 }
 
 func NewBorrowingTransactions() BorrowingTransactions {
 	btxs := BorrowingTransactions{}
 	btxs.BorrowingTxs = make(map[string]Transaction)
+	btxs.Borrower = make(map[string]string)
 	return btxs
 }
 
@@ -46,8 +53,9 @@ func BuildBorrowingTransactions(chains []p2.Blockchain) BorrowingTransactions {
 				//loop over all key valye pairs and collect borrowing txs
 				for _, txjson := range keyValuePairs {
 					tx := JsonToTransaction(txjson)
-					if tx.To.Label == "" && tx.ToTxId == "" && tx.Tokens > 0 && tx.TxType != "start" && tx.TxType != "default" && tx.From.Label != "" {
+					if tx.TxType == "req" /*tx.To.Label == "" && tx.ToTxId == "" && tx.Tokens > 0 && tx.TxType != "start" && tx.TxType != "default" && tx.From.Label != ""*/ {
 						btx.BorrowingTxs[tx.Id] = tx
+						btx.Borrower[tx.Id] = tx.From.PublicIdentityToJson()
 					}
 
 				}
@@ -60,5 +68,9 @@ func BuildBorrowingTransactions(chains []p2.Blockchain) BorrowingTransactions {
 }
 
 func (btx *BorrowingTransaction) EncodeTojsonString() string {
-
+	jsonBytes, err := json.Marshal(btx)
+	if err != nil {
+		log.Println("Error in marshalling BorrowingTransaction to json , err - ", err)
+	}
+	return string(jsonBytes)
 }

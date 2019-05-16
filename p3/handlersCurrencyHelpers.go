@@ -2,6 +2,7 @@ package p3
 
 import (
 	"../p1"
+	"../p4"
 	"../p5"
 )
 
@@ -28,11 +29,15 @@ func GenerateTransactionsMPT() p1.MerklePatriciaTrie {
 	txs := TxPool.ReadFromTransactionPool(random)
 	for _, tx := range txs {
 
-		//todo - check if transaction valid
+		//todo - check if transaction valid -- need 2 things -  balancebook to see if enough balance and
+		//													 -  list of all tx id map[string- txid]bool-false
+		bb := p5.NewBalanceBook()
+		chain := p4.GetCanonicalChains(&SBC)
+		bb.BuildBalanceBook(chain[0], 2)
+		mpt.Insert(tx.Id, tx.TransactionToJson())
 
 		TxPool.DeleteFromTransactionPool(tx.Id) //delete from TransactionPool
 
-		mpt.Insert(tx.Id, tx.TransactionToJson())
 	}
 
 	return mpt

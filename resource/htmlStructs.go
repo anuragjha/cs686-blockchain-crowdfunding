@@ -7,11 +7,11 @@ import (
 )
 
 type UserLandingPage struct {
-	Pid     p5.PublicIdentity
-	FromPid string
-	BTxs    p5.BorrowingTransactions // key - BorrowingTxId
-	//BalanceBook p5.BalanceBook
-	Purse p5.Wallet
+	Pid              p5.PublicIdentity
+	FromPid          string
+	BTxs             p5.BorrowingTransactions // key - BorrowingTxId
+	PromisedInString string
+	Purse            p5.Wallet
 }
 
 type LoginPageStruct struct {

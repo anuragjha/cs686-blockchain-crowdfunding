@@ -54,9 +54,12 @@ func (bb *BalanceBook) BuildBalanceBook(chain p2.Blockchain, fromHeight int32) {
 			mpt = blk.Value
 			keyValuePairs := mpt.GetAllKeyValuePairs() //key - txid value - txJson
 			//loop over all key valye pairs and collect borrowing txs
-			for _, txjson := range keyValuePairs {
+			for keyTxid, valueTxJson := range keyValuePairs {
+
 				//log.Println("\nIn BuildBalanceBook - txJson to be converted to Tx ---> \n", txjson)
-				tx := JsonToTransaction(txjson)
+				tx := JsonToTransaction(valueTxJson)
+				log.Println("\nIn BuildBalanceBook - txJson to be converted to Tx ---> keyTxid\n", keyTxid)
+				log.Println("\nIn BuildBalanceBook - txJson to be converted to Tx ---> valueTxJson\n", valueTxJson)
 				log.Println("\nIn BuildBalanceBook - txJson to be converted to Tx ---> tx ID\n", tx.Id)
 				log.Println("\nIn BuildBalanceBook - txJson to be converted to Tx ---> tx Tokens\n", tx.Tokens)
 
@@ -100,6 +103,24 @@ func (bb *BalanceBook) UpdateABalanceBookForTx(tx Transaction) { // update bb ba
 		toKey := bb.GetKey(tx.To.PublicKey)
 		bb.UpdateABalanceInBook(toKey, tx.Tokens)
 
+	} else if tx.TxType == "req" /*&& tx.ToTxId == ""*/ /*tx.To.Label == "" && tx.ToTxId == "" && tx.From.Label != ""*/ { // A 's Req Tx // Requirement
+
+		if _, ok := bb.Promised[tx.ToTxId]; !ok {
+			log.Println("<<<<<<<<<<<<<<<<<<<<<< In UpdateABalanceBookForTx - // A 's Req Tx // Requirement !!!!!!!! !!!!!! - tx id - ", tx.Id,
+				">>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+			bb.PutTxInPromised(tx) //create a new key in promised
+		}
+
+	} else if tx.TxType == "promise" /*&& tx.ToTxId != ""*/ /*tx.ToTxId != "" && tx.From.Label != "" && tx.To.Label == ""*/ { // B to Req Tx
+
+		log.Println("<<<<<<<<<<<<<<<<<<<<<< In UpdatePromiseBookForTx - // B +++++> Req Tx !!!!!!!! !!!!!! - tx id - ", tx.Id,
+			">>>>>>>>>>>>>>>>>>>>>>>>>>>>", tx.Tokens)
+		//bb1 := NewBalanceBook()
+		//bb1.Book = bb.Book
+		//bb1.Promised = bb.Promised
+		vary := bb.Promised[tx.ToTxId]
+		bb.UpdateABalanceInPromised(tx, vary)
+
 	} else if tx.TxType == "" && tx.To.Label != "" && tx.From.Label != "" && tx.ToTxId == "" { // A to B token transfer // pay
 		log.Println("<<<<<<<<<<<<<<<<<<<<<< In UpdateABalanceBookForTx -A to B token transfer !!!!!!!! !!!!!! - tx id - ", tx.Id,
 			">>>>>>>>>>>>>>>>>>>>>>>>>>>>")
@@ -110,22 +131,7 @@ func (bb *BalanceBook) UpdateABalanceBookForTx(tx Transaction) { // update bb ba
 		toKey := bb.GetKey(tx.To.PublicKey)
 		bb.UpdateABalanceInBook(toKey, tx.Tokens)
 		//bb.UpdateABalanceInBook(toKey, -tx.Fees)
-
-	} else if tx.TxType == "req" && tx.ToTxId == "" /*tx.To.Label == "" && tx.ToTxId == "" && tx.From.Label != ""*/ { // A 's Req Tx // Requirement
-
-		if _, ok := bb.Promised[tx.ToTxId]; !ok {
-			log.Println("<<<<<<<<<<<<<<<<<<<<<< In UpdateABalanceBookForTx - // A 's Req Tx // Requirement !!!!!!!! !!!!!! - tx id - ", tx.Id,
-				">>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-			bb.PutTxInPromised(tx)
-		}
-
-	} else if tx.TxType == "promise" && tx.ToTxId != "" /*tx.ToTxId != "" && tx.From.Label != "" && tx.To.Label == ""*/ { // B to Req Tx
-
-		log.Println("<<<<<<<<<<<<<<<<<<<<<< In UpdatePromiseBookForTx - // B +++++> Req Tx !!!!!!!! !!!!!! - tx id - ", tx.Id,
-			">>>>>>>>>>>>>>>>>>>>>>>>>>>>", tx.Tokens)
-		bb.UpdateABalanceInPromised(tx, bb.Promised[tx.ToTxId])
 	}
-
 }
 
 func (bb *BalanceBook) UpdateABalanceInBook(PublicKeyHashStr string, updateBalanceBy float64) {
@@ -144,27 +150,27 @@ func (bb *BalanceBook) UpdateABalanceInBook(PublicKeyHashStr string, updateBalan
 	bb.Book.Insert(PublicKeyHashStr, fmt.Sprintf("%f", newBalance))
 }
 
-func (bb *BalanceBook) UpdateABalanceInPromised(tx Transaction, btx BorrowingTransaction) {  //todo check coz changed to array - var PromisesMade
+func (bb *BalanceBook) UpdateABalanceInPromised(tx Transaction, btx BorrowingTransaction) { //todo check coz changed to array - var PromisesMade
 
+	log.Println(">>>>>>>>>>>>>>>  In UpdateABalanceInPromised  <<<<<<<<<<<<<<<<") // todo todo ::: getting correct tx but not able to put it on the map
+	log.Println("\nTransaction being processed : \n", tx.TransactionToJson())     // todo todo --- start with testing - to test the changes made
+	log.Println("\nAnd Promised dataStructure is >---->>>", bb.Promised)          // []Transaction init when borrowing tx created in NewBorrowingTransaction
+	log.Println("\nAnd ShowPromised is >---->>>", bb.ShowPromised())              // in PutTxInPromised
+	// todo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! test
+	btx.PromisedValue += tx.Tokens
+	//btx := bb.Promised[tx.ToTxId]
+	btx.PromisesMade = append(btx.PromisesMade, tx)
+	bb.Promised[tx.ToTxId] = btx
 
-	log.Println(">>>>>>>>>>>>>>>  In UpdateABalanceInPromised  <<<<<<<<<<<<<<<<")// todo todo ::: getting correct tx but not able to put it on the map
-	log.Println("Transaction being processed : \n", tx.TransactionToJson())	// todo todo --- start with testing - to test the changes made
-	log.Println("And Promised dataStructure is >---->>>", bb.Promised)			// []Transaction init when borrowing tx created in NewBorrowingTransaction
-																					// in PutTxInPromised
-																					// todo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! test
+	//enough := btx.CheckForEnoughPromises()
+	if btx.PromisedValue >= btx.BorrowingTx.Tokens { //enough {
+		//transfer token from Promised Tx User -to- Req Tx User
+		log.Println("Enough Promises ----------> -----------> ------->", "Achived")
 
-		//btx := bb.Promised[tx.ToTxId]
-		btx.PromisesMade = append(btx.PromisesMade, tx)
+		bb.TransferPromisesMade(btx)
 
-		enough := btx.CheckForEnoughPromises()
-		if enough {
-			//transfer token from Promised Tx User -to- Req Tx User
-			log.Println("Enough Promises ----------> -----------> ------->", enough)
-
-			bb.TransferPromisesMade(btx)
-
-			delete(bb.Promised, tx.ToTxId)
-		}
+		delete(bb.Promised, tx.ToTxId)
+	}
 
 	// Promised --->
 	// key - Requirement transaction id -||- value - BorrowingTransaction
@@ -190,7 +196,7 @@ func (bb *BalanceBook) UpdateABalanceInPromised(tx Transaction, btx BorrowingTra
 	////}
 }
 
-func (bb *BalanceBook) TransferPromisesMade(btx BorrowingTransaction) {  //todo check coz changed to array - var PromisesMade
+func (bb *BalanceBook) TransferPromisesMade(btx BorrowingTransaction) { //todo check coz changed to array - var PromisesMade
 
 	log.Println(">>>>>>>>>>>>>>> In TransferPromisesMade  <<<<<<<<<<<<<<<<")
 	for _, ptx := range btx.PromisesMade {
@@ -239,15 +245,13 @@ func (bb *BalanceBook) PutTxInPromised(tx Transaction) {
 	if _, ok := bb.Promised[tx.Id]; !ok {
 
 		btx := NewBorrowingTransaction(tx)
-		btx.PromisesMade = make([]Transaction, 1)
 
-		log.Println("\nCheck Start !!! Check Start !!! Check Start !!!")
+		log.Println("\nCheck Start !!! Check Start !!! Check Start !!!\n\n")
 
-		log.Println("BTX is - > ", btx.)
+		log.Println("BTX is - > ", btx.EncodeTojsonString())
 
-		log.Println("Check End !!! Check End !!! Check End !!!")
+		log.Println("\n\nCheck End !!! Check End !!! Check End !!!")
 		log.Println("^^^^")
-
 
 		bb.Promised[tx.Id] = btx
 
@@ -257,6 +261,7 @@ func (bb *BalanceBook) PutTxInPromised(tx Transaction) {
 }
 
 func GetKeyForBook(publicKey *rsa.PublicKey) string {
+
 	hash := sha3.Sum256(publicKey.N.Bytes())
 	hashKey := hex.EncodeToString(hash[:])
 	return hashKey
@@ -324,15 +329,9 @@ func (bb *BalanceBook) Show() string {
 func (bb *BalanceBook) ShowPromised() string {
 	str := ""
 	for _, btx := range bb.Promised {
-		str += "\nBTX : "
-		str += btx.BorrowingTxId
-		str += " of amt : "
-		str += fmt.Sprintf("%f", btx.BorrowingTx.Tokens)
+		str += ">>---> BTX : " + btx.BorrowingTxId + " of amt : " + fmt.Sprintf("%f", btx.BorrowingTx.Tokens) + " " + TOKENUNIT + "\n"
 		for _, promise := range btx.PromisesMade {
-			str += "\n\t\tPTX : "
-			str += promise.From.Label
-			str += "promises : "
-			str += fmt.Sprintf("%f", promise.Tokens)
+			str += "\nand  PTXs are : " + promise.From.Label + " has promised : " + fmt.Sprintf("%f", promise.Tokens) + " " + TOKENUNIT + "\n"
 		}
 	}
 	return str

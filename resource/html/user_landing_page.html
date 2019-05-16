@@ -41,7 +41,8 @@
 <!-- Page Content -->
 <div class="container">
 
-    <div class="container">
+
+    <div class="container mb-4">
         <div class="row">
             <div class="alert alert-primary" role="alert">
                 <div class="col">
@@ -50,15 +51,15 @@
             </div>
 
         </div>
-    </div>
+    </div> <!-- balance on top -->
 
 
-    <div class="container">
-        <h1 class="mt-4">Hi! {{.Pid.Label}}, Whats on your mind today ?</h1>
-    </div>
+    <div class="container mb-4 ">
+        <h1 class="mt-4">Hi :-)  <mark>{{.Pid.Label}}</mark>, Whats on your mind today ?</h1>
+    </div> <!-- Hi ing to User -->
 
 
-    <div class="container">
+    <div class="container mb-5 mt-5 ">
         <form action="/transactionform" method="post">
             <div class="row">
 
@@ -79,9 +80,9 @@
                         <div class="row">
                             <div class="col">
                                 <label for="to"><b>To</b></label>
-                           </div>
+                            </div>
                             <div class="col">
-                                 <input type="text" placeholder="To" name="to" id="to">
+                                <input type="text" placeholder="To" name="to" id="to">
                             </div>
                         </div>
                     </div>
@@ -123,50 +124,104 @@
 
 
 
-                    <input type="button"class="btn btn-warning"  onClick="history.go(0)" VALUE="Refresh" style="margin-right: 20px">
+                <input type="button" class="btn btn-warning"  onClick="history.go(0)" VALUE="Refresh" style="margin-right: 20px">
 
 
-                    <button type="submit" class="btn btn-primary">Submit</button>
+                <button type="submit" class="btn btn-primary">Submit</button>
 
 
             </div>
 
         </form>
-    </div>
+    </div> <!-- Transacrion Form -->
 
 
-    <div class="container">
-        <div class="row">
-            <div class="col-8">
-                <h4> Requirements (Tx ids)</h4>
+    <div class="container mb-4">
+
+        <div class="row mt-3 mb-4 col-md-12">
+
+            <div class="container modal-content">
+                <div class="row alert alert-primary" role="alert">
+                    <h4 class=" mt-3 mb-4 col-md-12"> Requirements and Commitment</h4>
+                </div>
+                <div class="row mt-1 mb-4 col-md-12">
+                {{ .PromisedInString }}
+                </div>
             </div>
-            <div class="col-4">
-                <h4> Amount </h4>
+        </div>
+    </div> <!-- Requirement and Commitments -->
+
+    <div class="container mb-4 ">
+        <div class="row mt-3 mb-4 col-md-12">
+            <h4 class="mt-3 mb-1 col-md-12 alert alert-success" role="alert"> Requirements History</h4>
+            <div class="row mt-2 mb-4 col-md-12">
+                <div class="col-8">
+                    <h6> Tx id</h6>
+                </div>
+                <div class="col-4">
+                    <h6> Amount </h6>
+                </div>
+                {{ range $key, $value := .BTxs.BorrowingTxs }}
+                    <div class="col-8">
+                        {{ $key }}
+                    </div>
+                    <div class="col-4">
+                        {{ $value.Tokens }}
+                    </div>
+                {{ end }}
             </div>
 
-            {{ range $key, $value := .BTxs.BorrowingTxs }}
-            <div class="col-8">
-                {{ $key }}
-            </div>
-            <div class="col-4">
-                {{ $value.Tokens }}
-            </div>
+
+        </div>
+    </div> <!-- reqirement History -->
+
+    <div class="container mb-4">
+        <div class="row mt-3 mb-4 col-md-12">
+            <h4 class="mt-3 mb-1 col-md-12 alert alert-success" role="alert"> Requirements Contact Details</h4>
+        </div>
+        <div class="row col-md-12">
+            {{ range $key, $value := .BTxs.Borrower }}
+                <div class="col-md-12" style="word-wrap: break-word">
+                    {{ $key }}
+                    +
+                    {{ $value }}
+                </div>
             {{ end }}
         </div>
 
-            <!--<div class="col-4">
-                \{\{ range $key, $value := .BTxs.BorrowingTxs }}
-                    <li>
-                        <strong>\{\{ $key }}</strong>: \{\{ $value.Tokens }}
-                    </li>
-                \{\{ end }}
-            </div> -->
+
+
+    </div> <!-- Requirements Contact Details -->
+
+    <div class="container mb-4">
+        <div class="row mt-3 mb-4 col-md-12">
+
+            {{ range $key, $value := .BTxs.BorrowingTxs }}
+                <div class="col-8">
+                    {{ $key }}
+                </div>
+                <div class="col-4">
+                    {{ $value.Tokens }}
+                </div>
+            {{ end }}
 
 
         </div>
     </div>
 
+        <!--<div class="col-4">
+            \{\{ range $key, $value := .BTxs.BorrowingTxs }}
+                <li>
+                    <strong>\{\{ $key }}</strong>: \{\{ $value.Tokens }}
+                </li>
+            \{\{ end }}
+        </div> -->
+
+
 </div>
+
+
+
 <!-- /.container -->
 
 
@@ -177,11 +232,3 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-

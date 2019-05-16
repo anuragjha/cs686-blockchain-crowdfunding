@@ -168,7 +168,7 @@ func GenDigest(hash hash.Hash, message []byte) []byte {
 //}
 
 func (pid *PublicIdentity) PublicIdentityToJson() string {
-	jsonBytes, err := json.Marshal(pid)
+	jsonBytes, err := json.Marshal(&pid)
 	if err != nil {
 		log.Println("Error in marshalling publicIdentity, err - ", err)
 		return "{}"

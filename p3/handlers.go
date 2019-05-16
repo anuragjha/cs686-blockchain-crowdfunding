@@ -106,9 +106,10 @@ func Start(w http.ResponseWriter, r *http.Request) {
 			b1 := SBC.GenBlock(1, "genesis", mpt, nonce)
 			SBC.Insert(b1)
 
-			GiveGenesisTokens(ID)
+			//GiveGenesisTokens(ID)
 
 		}
+		GiveMinerTokens(ID)
 
 		//if Peers.GetSelfId() != 6686 { //download if not 6686
 		if SELF_ADDR != INIT_SERVER {

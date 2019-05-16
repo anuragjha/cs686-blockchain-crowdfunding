@@ -163,4 +163,10 @@ var routes = Routes{
 		"/txbeat/allprev", //to put in tx pool
 		TransactionPoolRecv,
 	},
+	Route{
+		"GetMyId", //api of bcHolder
+		"GET",
+		"/getmyid", //to put in tx pool
+		GetMyId,
+	},
 }

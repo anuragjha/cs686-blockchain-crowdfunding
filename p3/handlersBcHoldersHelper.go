@@ -149,7 +149,8 @@ func clientLandingHtml(w http.ResponseWriter, r *http.Request, pid p5.PublicIden
 	obj.BTxs = p5.BuildBorrowingTransactions(chains)
 	bb := p5.NewBalanceBook()
 	bb.BuildBalanceBook(chains[0], 2)
-	//obj.BalanceBook = bb
+	//obj.BB = bb
+	obj.PromisedInString = bb.ShowPromised()
 	obj.Purse = p5.NewWallet()
 	obj.Purse.Balance = bb.GetBalanceFromPublicKey(pid.PublicKey)
 
@@ -175,8 +176,8 @@ func TransactionBeatRecv(w http.ResponseWriter, r *http.Request) {
 
 	txBeat := p5.DecodeToTransactionBeat(body)
 
-	if p5.VerifyTxSig(txBeat.Tx.From, txBeat.Tx, txBeat.TxSig) { //todo
-		//check if transaction is valid
+	if p5.VerifyTxSig(txBeat.Tx.From, txBeat.Tx, txBeat.TxSig) {
+		//check if transaction is valid todo verification in - when getting tx for mpt
 		if txBeat.Tx.Tokens != 0 {
 			//if p5.IsTransactionValid(txBeat.Tx, BalanceBook) { //checks both book and amt promised //todo
 			//put transaction in Txpool
@@ -253,7 +254,7 @@ func GiveDefaultTokens(cid p5.ClientId) {
 
 }
 
-func GiveGenesisTokens(cid p5.Identity) {
+func GiveMinerTokens(cid p5.Identity) {
 	tx := p5.NewTransaction(ID.GetMyPublicIdentity(), cid.GetMyPublicIdentity(), "", 10000, 0, "start")
 	TxPool.AddToTransactionPool(tx)
 
@@ -261,3 +262,11 @@ func GiveGenesisTokens(cid p5.Identity) {
 	//forwardTxBeat(txBeat)
 
 }
+
+//func GiveGenesisTokens() {
+//tx := p5.NewTransaction(ID.GetMyPublicIdentity(), cid.GetMyPublicIdentity(), "", 10000, 0, "start")
+//TxPool.AddToTransactionPool(tx)
+//
+////txBeat := p5.NewTransactionBeat(tx, ID.GetMyPublicIdentity(), tx.CreateTxSigForMiner(ID))
+////forwardTxBeat(txBeat)
+//}
