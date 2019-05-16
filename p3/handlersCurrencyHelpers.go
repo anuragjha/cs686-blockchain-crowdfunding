@@ -54,7 +54,9 @@ func GenerateTransactionsMPT() p1.MerklePatriciaTrie {
 			if err == nil {
 				availBal, _ := strconv.ParseFloat(available, 64)
 
-				if availBal >= tx.Tokens+tx.Fees {
+				amountPromised := bb.CheckAmountPromisedByOne(tx.From)
+
+				if availBal >= tx.Tokens+tx.Fees+amountPromised /* + amount promised */ {
 					log.Println("In GenerateTransactionsMPT - Enough Balance available - so moving on ... :-)")
 					/// code goes here
 					mpt.Insert(tx.Id, tx.TransactionToJson())

@@ -11,7 +11,7 @@ import (
 type BorrowingTransaction struct {
 	BorrowingTxId string        `json:"borrowingtxid"`
 	BorrowingTx   Transaction   `json:"borrowingtx"`
-	PromisesMade  []Transaction `json:"promisesmade"` // key - transaction id (Lending) // todo todo -- changed from map to array -- check start here
+	PromisesMade  []Transaction `json:"promisesmade"` // key - transaction id (Lending) // todo todo -- changed from map to array
 	PromisedValue float64       `json:"promisedvalue"`
 }
 

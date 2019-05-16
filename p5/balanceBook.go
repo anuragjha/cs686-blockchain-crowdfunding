@@ -336,3 +336,17 @@ func (bb *BalanceBook) ShowPromised() string {
 	}
 	return str
 }
+
+func (bb *BalanceBook) CheckAmountPromisedByOne(pid PublicIdentity) float64 {
+
+	amountPromised := float64(0.0)
+	for _, btx := range bb.Promised {
+		for _, ptx := range btx.PromisesMade {
+			if ptx.From.PublicKey.N.String() == pid.PublicKey.N.String() { //ptx.From   and ptx.Tokens
+				amountPromised += ptx.Tokens
+			}
+		}
+	}
+	return amountPromised
+
+}
