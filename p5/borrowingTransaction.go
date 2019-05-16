@@ -16,7 +16,6 @@ func NewBorrowingTransaction(tx Transaction) BorrowingTransaction {
 	bt := BorrowingTransaction{}
 	bt.BorrowingTxId = tx.Id
 	bt.BorrowingTx = tx
-	bt.PromisesMade = make([]Transaction, 1)
 
 	return bt
 
@@ -57,5 +56,9 @@ func BuildBorrowingTransactions(chains []p2.Blockchain) BorrowingTransactions {
 	}
 
 	return btx
+
+}
+
+func (btx *BorrowingTransaction) EncodeTojsonString() string {
 
 }
