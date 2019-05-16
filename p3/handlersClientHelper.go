@@ -158,7 +158,7 @@ func TransactionForm(w http.ResponseWriter, r *http.Request) {
 	fromVal := CID.GetMyPublicIdentity()                                             //r.FormValue("from")
 	log.Println("in TransactionForm - FromValue : ", fromVal.PublicIdentityToJson()) //empth here
 	//fromVal := p5.JsonToPublicIdentity(fromValue)
-	toFormValue := r.FormValue("topid")
+	toFormValue := r.FormValue("to")
 	log.Println()
 	toVal := p5.JsonToPublicIdentity(toFormValue)
 	fmt.Println("HEHAAH : ", toFormValue)

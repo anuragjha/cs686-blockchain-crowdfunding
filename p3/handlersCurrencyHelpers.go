@@ -2,8 +2,12 @@ package p3
 
 import (
 	"../p1"
+	"../p2"
+	b "../p2/block"
 	"../p4"
 	"../p5"
+	"log"
+	"strconv"
 )
 
 var BalanceBook p5.BalanceBook
@@ -30,14 +34,40 @@ func GenerateTransactionsMPT() p1.MerklePatriciaTrie {
 	for _, tx := range txs {
 
 		//todo - check if transaction valid -- need 2 things -  balancebook to see if enough balance and
-		//													 -  list of all tx id map[string- txid]bool-false
-		bb := p5.NewBalanceBook()
-		chain := p4.GetCanonicalChains(&SBC)
-		bb.BuildBalanceBook(chain[0], 2)
-		mpt.Insert(tx.Id, tx.TransactionToJson())
+		//
+		//			todo									 -  list of all tx id map[string- txid]bool-false
+
+		chains := p4.GetCanonicalChains(&SBC)
+
+		//check if tx id already present on chain
+		txl := BuildTransactionsList(chains[0])
+		if _, ok := txl[tx.Id]; !ok { // txansaction not on canonical chain
+
+			log.Println("In GenerateTransactionsMPT - tx not in canonical chain - so moving on ... :-)")
+
+			bb := p5.NewBalanceBook()
+			bb.BuildBalanceBook(chains[0], 2)
+
+			// check if available balance is enough //todo check
+			senderKeyForBook := p5.GetKeyForBook(tx.From.PublicKey)
+			available, err := bb.Book.Get(senderKeyForBook)
+			if err == nil {
+				availBal, _ := strconv.ParseFloat(available, 64)
+
+				if availBal >= tx.Tokens+tx.Fees {
+					log.Println("In GenerateTransactionsMPT - Enough Balance available - so moving on ... :-)")
+					/// code goes here
+					mpt.Insert(tx.Id, tx.TransactionToJson())
+				}
+
+			} else if tx.TxType == "start" {
+				log.Println("In GenerateTransactionsMPT - Start Transaction for miner - so moving on ... :-)")
+				/// code goes here
+				mpt.Insert(tx.Id, tx.TransactionToJson())
+			}
+		}
 
 		TxPool.DeleteFromTransactionPool(tx.Id) //delete from TransactionPool
-
 	}
 
 	return mpt
@@ -50,3 +80,26 @@ func GenerateTransactionsMPT() p1.MerklePatriciaTrie {
 //		TxPool.Pool[tx] = true
 //	}
 //}
+
+func BuildTransactionsList(chain p2.Blockchain) map[string]bool {
+
+	txl := make(map[string]bool)
+	//loop over the blockchain[0] of chains
+	var i int32
+
+	for i = 2; i <= chain.Length; i++ {
+		blks, found := chain.Get(i)
+		if found && len(blks) > 0 {
+			blk := b.Block(blks[0])
+			mpt := p1.MerklePatriciaTrie(blk.Value)
+			keyValuePairs := mpt.GetAllKeyValuePairs() //key - txid value - txJson
+			//loop over all key valye pairs and collect borrowing txs
+			for txId, _ := range keyValuePairs {
+				txl[txId] = false
+			}
+		}
+	}
+
+	return txl
+
+}

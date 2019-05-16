@@ -616,7 +616,7 @@ func ShowBalanceBook(w http.ResponseWriter, r *http.Request) {
 
 	str := "Balance Book :\n"
 	for key, value := range bb.Book.GetAllKeyValuePairs() {
-		str += "\n" + key + "\t\t" + value
+		str += "\n" + key + "\t\t" + value + " " + p5.TOKENUNIT
 	}
 	str += "\n\n"
 	//
