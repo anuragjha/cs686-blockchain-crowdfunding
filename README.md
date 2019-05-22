@@ -82,8 +82,8 @@ ClientId is now stored in Client at 7000
 
 #### D. Client does not have enough Promises for sum of Amount for the Borrow requirement
 1. Borrower can see the promises made against the Asked Amount
-2. Once the Promise is made by a client, they cannot recover the Amount ->
-#### Note - Feature where the Promiser can request the money back if the Promised sum has not exceeded
+2. Promiser can request the all/partial promise back if the Promised sum has not exceeded the Borrow requirement
+(Added after deadline)
 Algo - inside BuildPromised method
 If Promised < amount and new Promised is in negetive. -> - (Some Amount)
 Only then subtract the Amount from the the Promised
