@@ -56,10 +56,17 @@ func GenerateTransactionsMPT() p1.MerklePatriciaTrie {
 
 				amountPromised := bb.CheckAmountPromisedByOne(tx.From)
 
-				if availBal >= tx.Tokens+tx.Fees+amountPromised /* + amount promised */ {
+				if availBal >= tx.Tokens+tx.Fees+amountPromised && tx.Tokens >= 0 && tx.Fees >= 0 /* + amount promised */ {
 					log.Println("In GenerateTransactionsMPT - Enough Balance available - so moving on ... :-)")
 					/// code goes here
 					mpt.Insert(tx.Id, tx.TransactionToJson())
+
+				} else if tx.TxType == "promise" && tx.Tokens < 0 &&
+					availBal >= tx.Fees+amountPromised && (amountPromised >= -tx.Tokens) && tx.Fees >= 0 {
+					//take back promise //check to see if the promise of sum = or > than the amount in take back promise
+					log.Println("In GenerateTransactionsMPT - Enough Promised to take back some/all promise - so moving on ... :-} ")
+					mpt.Insert(tx.Id, tx.TransactionToJson())
+
 				}
 
 			} else if tx.TxType == "start" {

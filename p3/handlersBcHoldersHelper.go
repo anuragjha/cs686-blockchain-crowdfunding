@@ -149,7 +149,7 @@ func clientLandingHtml(w http.ResponseWriter, r *http.Request, pid p5.PublicIden
 	obj.BTxs = p5.BuildBorrowingTransactions(chains)
 	bb := p5.NewBalanceBook()
 	bb.BuildBalanceBook(chains[0], 2)
-	//obj.BB = bb
+	obj.BB = bb
 	obj.PromisedInString = bb.ShowPromised()
 	obj.Purse = p5.NewWallet()
 	obj.Purse.Balance = bb.GetBalanceFromPublicKey(pid.PublicKey)
@@ -190,7 +190,7 @@ func TransactionBeatRecv(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pid := txBeat.FromPid
-	clientLandingHtml(w, r, pid) // todo here see if bytes are comming as return screen of submit tx
+	clientLandingHtml(w, r, pid)
 }
 
 func forwardTxBeat(txBeat p5.TransactionBeat) {

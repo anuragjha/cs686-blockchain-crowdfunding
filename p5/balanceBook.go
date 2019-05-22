@@ -156,14 +156,28 @@ func (bb *BalanceBook) UpdateABalanceInPromised(tx Transaction, btx BorrowingTra
 	log.Println("\nTransaction being processed : \n", tx.TransactionToJson())     // todo todo --- start with testing - to test the changes made
 	log.Println("\nAnd Promised dataStructure is >---->>>", bb.Promised)          // []Transaction init when borrowing tx created in NewBorrowingTransaction
 	log.Println("\nAnd ShowPromised is >---->>>", bb.ShowPromised())              // in PutTxInPromised
-	// todo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! test
-	btx.PromisedValue += tx.Tokens
-	//btx := bb.Promised[tx.ToTxId]
-	btx.PromisesMade = append(btx.PromisesMade, tx)
-	bb.Promised[tx.ToTxId] = btx
+
+	// check if somebody wants to take back promise - full  or partial
+	if tx.Tokens < 0 && btx.PromisedValue < btx.BorrowingTx.Tokens {
+
+		//check if the tx.From has promised a Sum equal to more than that of cancelling amount
+		amountPromised := bb.CheckAmountPromisedByOne(tx.From)
+		if amountPromised > -1*tx.Tokens {
+			//taking promise back
+			btx.PromisedValue += tx.Tokens
+			btx.PromisesMade = append(btx.PromisesMade, tx)
+			bb.Promised[tx.ToTxId] = btx
+		}
+
+	} else if tx.Tokens > 0 {
+		//default working
+		btx.PromisedValue += tx.Tokens
+		btx.PromisesMade = append(btx.PromisesMade, tx)
+		bb.Promised[tx.ToTxId] = btx
+	}
 
 	//enough := btx.CheckForEnoughPromises()
-	if btx.PromisedValue >= btx.BorrowingTx.Tokens { //enough {
+	if btx.PromisedValue >= btx.BorrowingTx.Tokens { //enough promises made
 		//transfer token from Promised Tx User -to- Req Tx User
 		log.Println("Enough Promises ----------> -----------> ------->", "Achived")
 

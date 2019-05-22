@@ -11,6 +11,7 @@ type UserLandingPage struct {
 	FromPid          string
 	BTxs             p5.BorrowingTransactions // key - BorrowingTxId
 	PromisedInString string
+	BB               p5.BalanceBook
 	Purse            p5.Wallet
 }
 

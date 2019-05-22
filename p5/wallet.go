@@ -33,7 +33,7 @@ func NewWallet() Wallet {
 
 	return Wallet{
 		Balance: 0,
-		Unit:    TOKENUNIT,
+		Unit:    "pingala",
 	}
 }
 

@@ -182,7 +182,7 @@ func TransactionForm(w http.ResponseWriter, r *http.Request) {
 	if toVal.Label == "" && toTxId == "" && amountVal >= 0 && feesVal >= 0 {
 		tx = p5.NewTransaction(fromVal, toVal, toTxId, amountVal, feesVal, "req")
 		log.Println("================================ Requirement Tx")
-	} else if toTxId != "" && amountVal >= 0 && feesVal >= 0 {
+	} else if toTxId != "" && toVal.Label != "" /*&& amountVal >= 0*/ && feesVal >= 0 {
 
 		tx = p5.NewTransaction(fromVal, toVal, toTxId, amountVal, feesVal, "promise")
 		log.Println("================================ Promise Tx")
