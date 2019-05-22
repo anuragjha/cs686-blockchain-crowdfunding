@@ -128,7 +128,7 @@ There are two actors defined for the system, Miners and Clients.
 
 # Majors features of the Application
 
-## How Balanced Book in built
+## How Balanced Book is built
 BalanceBook is a struct which contains Book (a Key- value to store hash(PublicId) and Value(account Balance)).
 1. Then we get a canonical chain and iterate over each block starting from the initial height.
 2. Inside each block, iterate over transaction stored in mpt. 
