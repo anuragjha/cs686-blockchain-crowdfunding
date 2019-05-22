@@ -1,7 +1,6 @@
 # cs686_BlockChain_P5 - Lending system 
-## (such as crowd funding platform)
-
-## Project demo video is under cs686demo
+### (such as crowd funding platform)
+### Project demo video is under cs686demo
 
 # Application has following features
 1. Client can 'ask' for a sum of tokens.
@@ -14,24 +13,10 @@ Additionally, clients can also use peer to peer token transfer.
 Available balance is different from Actual balance. Available balance takes into account the sum of tokens already promised.
 Available balance is used for checking validity of transaction.
 
-## API overview
-There are two actors defined for the system, Miners and Clients.
-
-### API's for Miners
-1. GET /start
-2. GET /show
-3. GET /Canonical
-4. GET /showBlockMpt/{height}
-5. GET /showBalanceBook
-6. GET /showTransactionPool
-
-### Endpoints for Clients
-1. GET /
-2. POST /signup
-3. POST /login
-4. GET /cidpage
-5. POST /transactionform
-6. GET /GetMyId
+Todo - 
+1. Adding mechanism for fees for block producer
+2. Interest rate and time bound to return Interest
+3. Blacklist Borrower for defaulting
 
 ## How to run the application
 Miner and Client both uses the same initial command, with cmdline params as port number on which it wants to run on.
@@ -42,9 +27,76 @@ Miners use GET /start to begin mining process
 
 Clients
 1. Clients use GET / to initiate client functionality
-2. Client use /signup to get a key-value pair, Client use GET /cidpage to enter key-pair
-3. After than during login use the same key pair to prove authenticity
+2. Client use /signup to get a key-value pair
+3. Client use GET /cidpage to enter key-pair
+3. After then during login use the same key pair to prove authenticity
 4. Once logged in clients can initiate a ask transaction or a promise transaction, can also send tokens directly to peer.
+
+## API overview
+There are two actors defined for the system, Miners and Clients.
+
+### API's for Miners
+1. GET   /start 
+2. GET   /show
+3. GET   /upload
+4. GET   /block/{height}/{hash}
+5. POST  /heartbeat/receive
+6. GET   /Canonical
+7. GET   /showBlockMpt/{height}
+8. GET   /showBalanceBook
+9. GET   /showTransactionPool
+10. GET  /clientsignup
+11. GET  /clientlogin
+12. POST /txbeat/receive
+13. GET  /txbeat/allprev
+
+### Endpoints for Clients
+1. GET  /
+2. POST /signup
+3. POST /login
+4. GET  /cidpage
+5. POST /setcid 
+5. POST /transactionform
+6. GET  /GetMyId
+7. GET  /showWallet
+8. GET  /bcholders
+9. GET  /showbcholders
+
+How to initilize a Clients
+> go run main.go 7000
+
+1. localhost:7000/ -> Enter username and submit
+2. Click the signup button -> POST/signup is called
+3. STORE the key-pair generated
+
+4. On a different tab => localhost:7000/cidpage
+5. Paste the stored key-pair -> and click submit button
+ClientId is now stored in Client at 7000
+
+6. Back to previous tab and back to get -> localhost:7000/
+7. Click login button to get -> localhost:7000/login
+8. Enter a phrase and Paste the key-pair then click the login button
+9. Then use the interface to interact with other clients
+
+
+
+Ways to interact with interface ->
+
+
+Create a Borrow requirement
+1. To create a Request - borrow transaction
+2. Enter a value in -> Amount and Fees
+#### Note - Fees is not cut at this time Will be added - issue with cyclic import to add PublicId of the Miner
+3. And click submit
+
+Promise sum of amount for some Requirement
+1. Decide the sum of amount to give to the Client
+2. Enter that sum in -> Amount field
+3. Enter Fees in -> Fees field
+#### Note - Fees is not cut at this time Will be added - issue with cyclic import to add PublicId of the Miner
+
+
+
 
 
 # Majors features of the Application
@@ -55,13 +107,14 @@ BalanceBook is a struct which contains Book (a Key- value to store hash(PublicId
 2. Inside each block, iterate over transaction stored in mpt. 
 3. Based on the transactions start building the book and also build Promised. 
 Book is a key - value store of  hash(PublicKey) - Balance sum of tokens.
-Promised is a key - value store of TransactionId - Borrowing Transaction. Borrowing Transaction is structutre that contains
+Promised is a key - value store of TransactionId - Borrowing Transaction. \
+Borrowing Transaction is structutre that contains
  a. Initial Requirement Transaction
  b. Array of Promise Transaction
  c. Variable that keeps record of the total promised value.
 
 ## (1) Crypto 
-Achieving data integrity by use of Signature.
+Achieving data authenticity and integrity by use of Signature.
 
 ## security.go
 Implements the public-private keys and Hash generation. Also creating signature and verifying signature.
