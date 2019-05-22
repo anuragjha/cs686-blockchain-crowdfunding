@@ -18,8 +18,14 @@ Todo -
 2. Interest rate and time bound to return Interest
 3. Blacklist Borrower for defaulting
 
+### Assumptions
+1. First Miner runs on port 6686
+2. The Miner at 6686 first have to create 2 blocks only then we can start other nodes - miner as well as clients
+
 
 ## How to run the application
+
+
 Miner and Client both uses the same initial command, with cmdline params as port number on which it wants to run on.
 
 Miners use GET /start to begin mining process
