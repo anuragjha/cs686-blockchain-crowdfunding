@@ -18,6 +18,7 @@ Todo -
 2. Interest rate and time bound to return Interest
 3. Blacklist Borrower for defaulting
 
+
 ## How to run the application
 Miner and Client both uses the same initial command, with cmdline params as port number on which it wants to run on.
 
@@ -32,35 +33,6 @@ Clients
 3. After then during login use the same key pair to prove authenticity
 4. Once logged in clients can initiate a ask transaction or a promise transaction, can also send tokens directly to peer.
 
-## API overview
-There are two actors defined for the system, Miners and Clients.
-
-### API's for Miners
-1. GET   /start 
-2. GET   /show
-3. GET   /upload
-4. GET   /block/{height}/{hash}
-5. POST  /heartbeat/receive
-6. GET   /Canonical
-7. GET   /showBlockMpt/{height}
-8. GET   /showBalanceBook
-9. GET   /showTransactionPool
-10. GET  /clientsignup
-11. GET  /clientlogin
-12. POST /txbeat/receive
-13. GET  /txbeat/allprev
-
-### Endpoints for Clients
-1. GET  /
-2. POST /signup
-3. POST /login
-4. GET  /cidpage
-5. POST /setcid 
-5. POST /transactionform
-6. GET  /GetMyId
-7. GET  /showWallet
-8. GET  /bcholders
-9. GET  /showbcholders
 
 ### How to initilize a Clients
 > go run main.go 7000
@@ -117,6 +89,35 @@ Transfer sum of Amount directly to another client
 4. Click on the submit button -> Balance at Sender and Receiever will be updated
 
 
+## API overview
+There are two actors defined for the system, Miners and Clients.
+
+### API's for Miners
+1. GET   /start 
+2. GET   /show
+3. GET   /upload
+4. GET   /block/{height}/{hash}
+5. POST  /heartbeat/receive
+6. GET   /Canonical
+7. GET   /showBlockMpt/{height}
+8. GET   /showBalanceBook
+9. GET   /showTransactionPool
+10. GET  /clientsignup
+11. GET  /clientlogin
+12. POST /txbeat/receive
+13. GET  /txbeat/allprev
+
+### Endpoints for Clients
+1. GET  /
+2. POST /signup
+3. POST /login
+4. GET  /cidpage
+5. POST /setcid 
+5. POST /transactionform
+6. GET  /GetMyId
+7. GET  /showWallet
+8. GET  /bcholders
+9. GET  /showbcholders
 
 
 # Majors features of the Application
