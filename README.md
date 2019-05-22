@@ -20,7 +20,8 @@ Todo -
 
 ### Assumptions - Rules under which the application works correctly
 1. First Miner runs on port 6686
-2. The Miner at 6686 first have to create 2 blocks only then we can start other nodes - miner as well as clients
+2. The Miner at 6686 first will create first 2 blocks only then we can start other nodes - miner as well as clients
+(1st block is a init block, and 2nd block c0ntains a transaction of 10000 tokens that every miner gets when they start up)
 
 
 ## How to run the application
