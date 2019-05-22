@@ -72,7 +72,7 @@ ClientId is now stored in Client at 7000
 2. Enter that sum in -> Amount field
 3. Enter Fees in -> Fees field
 #### Note - Fees is not cut at this time Will be added - issue with cyclic import to add PublicId of the Miner
-4. Find the TransactionId and PublicId of the Borrow transaction in bottom section -> Requirements Details
+4. Find the TransactionId and PublicId of the Borrow transaction in bottom section -> Requirements Contact Details
 5. Paste the values in -> TransactionId and -> To field
 6. click the submit button
 
