@@ -1,8 +1,10 @@
-# cs686_BlockChain_P5 - Lending system (such as crowd funding platform)
+# cs686_BlockChain_P5 - Lending system 
+### (such as Peer to Peer crowd funding platform)
+### Project demo video is under cs686demo
 
 # Application has following features
 1. Client can 'ask' for a sum of tokens.
-2. This 'ask' request is share among newtork users
+2. This 'ask' request is share among network users
 3. Clients can choose a 'ask' request and 'promise' and make a promise for a sum of money.
 4. All previous promises for the specific 'ask' request are tracked, and if the sum of promises mount to 'asked' tokens, then money is transferred for appropriate users.
 
@@ -11,42 +13,135 @@ Additionally, clients can also use peer to peer token transfer.
 Available balance is different from Actual balance. Available balance takes into account the sum of tokens already promised.
 Available balance is used for checking validity of transaction.
 
-## API overview
-There are two actors defined for the system, Miners and Clients.
+Todo - 
+1. Adding mechanism for fees for block producer
+2. Interest rate and time bound to return Interest
+3. Blacklist Borrower for defaulting
 
-### API's for Miners
-1. GET /start
-2. GET /show
-3. GET /Canonical
-4. GET /showBlockMpt/{height}
-5. GET /showBalanceBook
-6. GET /showTransactionPool
+### Assumptions - Rules under which the application works correctly
+1. First Miner runs on port 6686
+2. The Miner at 6686 first will create first 2 blocks only then we can start other nodes - miner as well as clients
+(1st block is a init block, and 2nd block c0ntains a transaction of 10000 tokens that every miner gets when they start up)
 
-### Endpoints for Clients
-1. GET /
-2. POST /signup
-3. POST /login
-4. GET cidpage
-5. POST /transactionform
-6. GET /GetMyId
 
 ## How to run the application
+
+
 Miner and Client both uses the same initial command, with cmdline params as port number on which it wants to run on.
 
 Miners use GET /start to begin mining process
 1. miner new - ask for txPool
 2. miner old - real time communicate new transaction
 
-Clients use GET / to initiate client functionality
-Client use /signup to get a key-value pair, Client use GET /cidpage to enter key-pair
-After than during login use the same key pair to prove authenticity
-Once logged in clients can initiate a ask transaction or a promise transaction, can also send tokens directly to peer.
+Clients
+1. Clients use GET / to initiate client functionality
+2. Client use /signup to get a key-value pair
+3. Client use GET /cidpage to enter key-pair
+3. After then during login use the same key pair to prove authenticity
+4. Once logged in clients can initiate a ask transaction or a promise transaction, can also send tokens directly to peer.
+
+
+### How to initilize a Clients
+> go run main.go 7000
+
+1. localhost:7000/ -> Enter username and submit
+2. Click the signup button -> POST/signup is called
+3. STORE the key-pair generated
+
+4. On a different tab => localhost:7000/cidpage
+5. Paste the stored key-pair -> and click submit button
+ClientId is now stored in Client at 7000
+
+6. Back to previous tab and back to get -> localhost:7000/
+7. Click login button to get -> localhost:7000/login
+8. Enter a phrase and Paste the key-pair then click the login button
+9. Then use the interface to interact with other clients
+
+
+
+### Ways to interact with interface ->
+
+
+#### A. Create a Borrow requirement
+1. To create a - borrow transaction
+2. Enter a value in -> Amount and Fees
+#### Note - Fees is not cut at this time Will be added - issue with cyclic import to add PublicId of the Miner
+3. And click submit
+
+#### B. Promise sum of amount for some Requirement
+1. Decide the sum of amount to give to the Client
+2. Enter that sum in -> Amount field
+3. Enter Fees in -> Fees field
+#### Note - Fees is not cut at this time Will be added - issue with cyclic import to add PublicId of the Miner
+4. Find the TransactionId and PublicId of the Borrow transaction in bottom section -> Requirements Contact Details
+5. Paste the values in -> TransactionId and -> To field
+6. click the submit button
+
+#### C. Client have enough Promises for sum of Amount against the Borrow requirement
+1. Balance will be updated for all the Promisers and the Borrower, promises made cannot be reversed.
+
+#### D. Client does not have enough Promises for sum of Amount for the Borrow requirement
+1. Borrower can see the promises made against the Asked Amount
+2. Once the Promise is made by a client, they cannot recover the Amount ->
+#### Note - Feature where the Promiser can request the money back if the Promised sum has not exceeded
+Algo - inside BuildPromised method
+If Promised < amount and new Promised is in negetive. -> - (Some Amount)
+Only then subtract the Amount from the the Promised
+
+#### E. Transfer sum of Amount directly to another client
+1. Client can enter that sum in -> Amount field
+2. Enter Fees in -> Fees field
+3. Enter the PublicId of the other client -> To field
+4. Click on the submit button -> Balance at Sender and Receiever will be updated
+
+
+## API overview
+There are two actors defined for the system, Miners and Clients.
+
+### API's for Miners
+1. GET   /start 
+2. GET   /show
+3. GET   /upload
+4. GET   /block/{height}/{hash}
+5. POST  /heartbeat/receive
+6. GET   /Canonical
+7. GET   /showBlockMpt/{height}
+8. GET   /showBalanceBook
+9. GET   /showTransactionPool
+10. GET  /clientsignup
+11. GET  /clientlogin
+12. POST /txbeat/receive
+13. GET  /txbeat/allprev
+
+### Endpoints for Clients
+1. GET  /
+2. POST /signup
+3. POST /login
+4. GET  /cidpage
+5. POST /setcid 
+5. POST /transactionform
+6. GET  /GetMyId
+7. GET  /showWallet
+8. GET  /bcholders
+9. GET  /showbcholders
 
 
 # Majors features of the Application
 
+## How Balanced Book is built
+BalanceBook is a struct which contains Book (a Key- value to store hash(PublicId) and Value(account Balance)).
+1. Then we get a canonical chain and iterate over each block starting from the initial height.
+2. Inside each block, iterate over transaction stored in mpt. 
+3. Based on the transactions start building the book and also build Promised. 
+Book is a key - value store of  hash(PublicKey) - Balance sum of tokens.
+Promised is a key - value store of TransactionId - Borrowing Transaction. \
+Borrowing Transaction is structutre that contains
+ a. Initial Requirement Transaction
+ b. Array of Promise Transaction
+ c. Variable that keeps record of the total promised value.
+
 ## (1) Crypto 
-Achieving data integrity by use of Signature.
+Achieving data authenticity and integrity by use of Signature.
 
 ## security.go
 Implements the public-private keys and Hash generation. Also creating signature and verifying signature.
@@ -118,8 +213,8 @@ Tx remain in pool until it is part of canonical chain
 There are 2 type of transaction
 - Borrowing Tx
 - Lending Tx
-Generics ?? <<<<<<<<<<<< to understand type of Transaction
-------------------------- some ALGO ---------------------
+
+Algorithm
 For every Borrowing TX 
   Create a Promised Struct {  PromiseMPT<Lender TX, Lending Amount> } 
 And add it in PromiseList struct { Map < BorrowingTX, Promised Struct > }
@@ -206,17 +301,16 @@ UpdateBalanceBook
 GetBalance
 
 //todo 
-_______________________________________________________________ IsBalanceEnough finc
+a. IsBalanceEnough finc
 IsBalanceEnough() {
  - takes in key and needed balance - and returns true of false based on (Book and Promised)
 }
-_______________________________________________________________   generate balancebook and Promise book for a Chain
+b.  generate balancebook and Promise book for a Chain
 GenerateBalanceAndPromise(SBC SyncBlockchain) {
   - use function in canonical chain to get - the canonical blockchain then
   - start reading from 1st height block and read all the transactions to build up balancebook and promise book
 }
-
-_______________________________________________________________ Reading all transaction of one block 
+c. Reading all transaction of one block 
  - get a Block 
  - convert block to key value pairs
  - for every key value pairs - check and update ... balancebook and promise
@@ -245,11 +339,7 @@ POST /transactionBeatRecv
   req body should contain TransactionBeat( {Tx, FromPid, TxSignature, Hops} ) 
 
 
-========================================================================================
-========================================================================================
 =====================================Client=============================================
-========================================================================================
-========================================================================================
 
 starts normal but do not call the start api
 Instead calls GET /cover api - which shows the starting page for client - func startClient()
@@ -262,9 +352,6 @@ data structres a Client will have ->
   - ClientId
   - SELF_ADDR from Init function
   - use here Peers of type PeerList
-  
-
-
 
 ============================
 two miners - tx beat  - 2 conditions
