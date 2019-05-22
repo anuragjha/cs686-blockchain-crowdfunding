@@ -132,8 +132,8 @@ Tx remain in pool until it is part of canonical chain
 There are 2 type of transaction
 - Borrowing Tx
 - Lending Tx
-Generics ?? <<<<<<<<<<<< to understand type of Transaction
-------------------------- some ALGO ---------------------
+
+Algorithm
 For every Borrowing TX 
   Create a Promised Struct {  PromiseMPT<Lender TX, Lending Amount> } 
 And add it in PromiseList struct { Map < BorrowingTX, Promised Struct > }
