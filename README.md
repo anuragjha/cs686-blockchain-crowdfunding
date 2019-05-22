@@ -29,7 +29,7 @@ There are two actors defined for the system, Miners and Clients.
 1. GET /
 2. POST /signup
 3. POST /login
-4. GET cidpage
+4. GET /cidpage
 5. POST /transactionform
 6. GET /GetMyId
 
@@ -40,10 +40,11 @@ Miners use GET /start to begin mining process
 1. miner new - ask for txPool
 2. miner old - real time communicate new transaction
 
-Clients use GET / to initiate client functionality
-Client use /signup to get a key-value pair, Client use GET /cidpage to enter key-pair
-After than during login use the same key pair to prove authenticity
-Once logged in clients can initiate a ask transaction or a promise transaction, can also send tokens directly to peer.
+Clients
+1. Clients use GET / to initiate client functionality
+2. Client use /signup to get a key-value pair, Client use GET /cidpage to enter key-pair
+3. After than during login use the same key pair to prove authenticity
+4. Once logged in clients can initiate a ask transaction or a promise transaction, can also send tokens directly to peer.
 
 
 # Majors features of the Application
