@@ -18,7 +18,7 @@ Todo -
 2. Interest rate and time bound to return Interest
 3. Blacklist Borrower for defaulting
 
-### Assumptions
+### Assumptions - Rules under which the application works correctly
 1. First Miner runs on port 6686
 2. The Miner at 6686 first have to create 2 blocks only then we can start other nodes - miner as well as clients
 
