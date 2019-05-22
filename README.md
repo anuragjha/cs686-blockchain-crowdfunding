@@ -1,5 +1,5 @@
 # cs686_BlockChain_P5 - Lending system 
-### (such as crowd funding platform)
+### (such as Peer to Peer crowd funding platform)
 ### Project demo video is under cs686demo
 
 # Application has following features
@@ -62,7 +62,7 @@ There are two actors defined for the system, Miners and Clients.
 8. GET  /bcholders
 9. GET  /showbcholders
 
-How to initilize a Clients
+### How to initilize a Clients
 > go run main.go 7000
 
 1. localhost:7000/ -> Enter username and submit
@@ -80,11 +80,11 @@ ClientId is now stored in Client at 7000
 
 
 
-Ways to interact with interface ->
+### Ways to interact with interface ->
 
 
 Create a Borrow requirement
-1. To create a Request - borrow transaction
+1. To create a - borrow transaction
 2. Enter a value in -> Amount and Fees
 #### Note - Fees is not cut at this time Will be added - issue with cyclic import to add PublicId of the Miner
 3. And click submit
@@ -94,7 +94,27 @@ Promise sum of amount for some Requirement
 2. Enter that sum in -> Amount field
 3. Enter Fees in -> Fees field
 #### Note - Fees is not cut at this time Will be added - issue with cyclic import to add PublicId of the Miner
+4. Find the TransactionId and PublicId of the Borrow transaction in bottom section -> Requirements Details
+5. Paste the values in -> TransactionId and -> To field
+6. click the submit button
 
+Client have enough Promises for sum of Amount against the Borrow requirement
+1. Balance will be updated for all the Promisers and the Borrower, promises made cannot be reversed.
+
+Client does not have enough Promises for sum of Amount for the Borrow requirement
+1. Borrower can see the promises made against the Asked Amount
+2. Once the Promise is made by a client, they cannot recover the Amount ->
+#### Note - Feature where the Promiser can request the money back if the Promised sum has not exceeded
+Algo - inside BuildPromised method
+If Promised < amount and new Promised is in negetive. -> - (Some Amount)
+Only then subtract the Amount from the the Promised
+
+
+Transfer sum of Amount directly to another client
+1. Client can enter that sum in -> Amount field
+2. Enter Fees in -> Fees field
+3. Enter the PublicId of the other client -> To field
+4. Click on the submit button -> Balance at Sender and Receiever will be updated
 
 
 
