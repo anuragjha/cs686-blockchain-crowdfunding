@@ -220,17 +220,16 @@ UpdateBalanceBook
 GetBalance
 
 //todo 
-_______________________________________________________________ IsBalanceEnough finc
+a. IsBalanceEnough finc
 IsBalanceEnough() {
  - takes in key and needed balance - and returns true of false based on (Book and Promised)
 }
-_______________________________________________________________   generate balancebook and Promise book for a Chain
+b.  generate balancebook and Promise book for a Chain
 GenerateBalanceAndPromise(SBC SyncBlockchain) {
   - use function in canonical chain to get - the canonical blockchain then
   - start reading from 1st height block and read all the transactions to build up balancebook and promise book
 }
-
-_______________________________________________________________ Reading all transaction of one block 
+c. Reading all transaction of one block 
  - get a Block 
  - convert block to key value pairs
  - for every key value pairs - check and update ... balancebook and promise
@@ -259,11 +258,7 @@ POST /transactionBeatRecv
   req body should contain TransactionBeat( {Tx, FromPid, TxSignature, Hops} ) 
 
 
-========================================================================================
-========================================================================================
 =====================================Client=============================================
-========================================================================================
-========================================================================================
 
 starts normal but do not call the start api
 Instead calls GET /cover api - which shows the starting page for client - func startClient()
@@ -276,9 +271,6 @@ data structres a Client will have ->
   - ClientId
   - SELF_ADDR from Init function
   - use here Peers of type PeerList
-  
-
-
 
 ============================
 two miners - tx beat  - 2 conditions
