@@ -14,7 +14,7 @@ Available balance is different from Actual balance. Available balance takes into
 Available balance is used for checking validity of transaction.
 
 Todo - 
-1. Adding mechanism for fees for block producer
+1. Adding mechanism for fees for block producer - done
 2. Interest rate and time bound to return Interest
 3. Blacklist Borrower for defaulting
 
@@ -65,14 +65,12 @@ ClientId is now stored in Client at 7000
 #### A. Create a Borrow requirement
 1. To create a - borrow transaction
 2. Enter a value in -> Amount and Fees
-#### Note - Fees is not cut at this time Will be added - issue with cyclic import to add PublicId of the Miner
 3. And click submit
 
 #### B. Promise sum of amount for some Requirement
 1. Decide the sum of amount to give to the Client
 2. Enter that sum in -> Amount field
 3. Enter Fees in -> Fees field
-#### Note - Fees is not cut at this time Will be added - issue with cyclic import to add PublicId of the Miner
 4. Find the TransactionId and PublicId of the Borrow transaction in bottom section -> Requirements Contact Details
 5. Paste the values in -> TransactionId and -> To field
 6. click the submit button
@@ -101,13 +99,14 @@ There are two actors defined for the system, Miners and Clients.
 4. GET   /block/{height}/{hash}
 5. POST  /heartbeat/receive
 6. GET   /Canonical
-7. GET   /showBlockMpt/{height}
-8. GET   /showBalanceBook
-9. GET   /showTransactionPool
-10. GET  /clientsignup
-11. GET  /clientlogin
-12. POST /txbeat/receive
-13. GET  /txbeat/allprev
+7. GET   /showBlock/{height}
+8. GET   /showBlockMpt/{height}
+9. GET   /showBalanceBook
+10. GET   /showTransactionPool
+11. GET  /clientsignup
+12. GET  /clientlogin
+13. POST /txbeat/receive
+14. GET  /txbeat/allprev
 
 ### Endpoints for Clients
 1. GET  /
