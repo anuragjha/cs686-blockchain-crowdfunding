@@ -3,9 +3,10 @@
 ### Project demo video is under cs686demo
 
 # Application has following features
-1. Client can 'ask' for a sum of tokens.
-2. This 'ask' request is share among network users
-3. Clients can choose a 'ask' request and 'promise' and make a promise for a sum of money.
+> Every User is a Borrower and Lender.
+1. Borrower can 'ask' for a sum of tokens.
+2. This 'ask' request is share among network users.
+3. Lender can choose a 'ask' request and 'promise' and make a promise for a sum of money.
 4. All previous promises for the specific 'ask' request are tracked, and if the sum of promises mount to 'asked' tokens, then money is transferred for appropriate users.
 
 5. Client can then use peer to peer token transfer to pay back the lenders.
