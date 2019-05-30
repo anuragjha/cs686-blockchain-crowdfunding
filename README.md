@@ -3,7 +3,7 @@
 ### Project demo video is under cs686demo
 
 # Application has following features
-> Every User is a Borrower and Lender.
+> Every User is both, a Borrower and a Lender.
 1. Borrower can 'ask' for a sum of tokens.
 2. This 'ask' request is share among network users.
 3. Lender can choose a 'ask' request and 'promise' and make a promise for a sum of money.
