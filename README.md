@@ -1,5 +1,5 @@
-# cs686_BlockChain_P5 - Lending system 
-### (such as Peer to Peer crowd funding platform)
+# cs686_BlockChain_P5 - Peer to Peer Lending system 
+### (usecase - crowd funding platform)
 ### Project demo video is under cs686demo
 
 # Application has following features
