@@ -1,6 +1,11 @@
-# cs686_BlockChain_P5 - Peer to Peer Lending system 
+# Peer to Peer Lending system on Blockchain
 ### (usecase - crowd funding platform)
 ### Project demo video is under cs686demo
+### Specifications
+#### - Peer to Peer (Distributed system)
+#### - Data Structure - Merkle Patricia Trie
+#### - Communication - Gossip Protocol
+#### - Consensus - POW + Nakamoto
 
 # Application has following features
 #### Every User is both, a Borrower and a Lender.
