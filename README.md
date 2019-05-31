@@ -14,7 +14,7 @@
 Available balance is different from Actual balance. Available balance takes into account the sum of tokens already promised.
 Available balance is used for checking validity of transaction.
 
-Todo - 
+#### Todo - 
 - [X] Adding mechanism for fees for block producer
 - [ ] Interest rate and time bound to return Interest
 - [ ] Blacklist Borrower for defaulting
