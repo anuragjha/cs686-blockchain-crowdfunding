@@ -15,10 +15,10 @@ Available balance is different from Actual balance. Available balance takes into
 Available balance is used for checking validity of transaction.
 
 Todo - 
-- [X] Adding mechanism for fees for block producer - done
-- [] Interest rate and time bound to return Interest
-- [] Blacklist Borrower for defaulting
-- [] Self Adjusting Difficulty - in progress
+- [X] Adding mechanism for fees for block producer
+- [ ] Interest rate and time bound to return Interest
+- [ ] Blacklist Borrower for defaulting
+- [ ] Self Adjusting Difficulty - in progress
 > Algo for now - Receieved a Block for a height h (put logic before checking the difficulty POW)
 
 > Also, Algo to be put for creating a new block - (put this logic in nonce find)
