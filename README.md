@@ -20,13 +20,16 @@ Todo -
 3. Blacklist Borrower for defaulting
 4. Self Adjusting Difficulty - in progress
 > Algo for now - Receieved a Block for a height h (put logic before checking the difficulty POW)
+
 > Also, Algo to be put for creating a new block - (put this logic in nonce find)
+
 > UpdateDifficulty() {
->  find the latest n blocks (n=5 for now)
->  find the avgTimeDiff between these 5 blocks
->  if the avgTimeDiff > 6 sec then  decrease the difficulty level
->  if the avgTimeDiff < 4 sec then increase the difficulty level
-> }
+ -  find the latest n blocks (n=5 for now)
+ -  find the avgTimeDiff between these 5 blocks
+ -  if the avgTimeDiff > 6 sec then  decrease the difficulty level
+ -  if the avgTimeDiff < 4 sec then increase the difficulty level
+ - }
+ 
 > Will also have to be in Download of New Miner (to get the latest Difficulty) - after that can be changed by node independently
 
 ### Assumptions - Rules under which the application works correctly
