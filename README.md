@@ -2,9 +2,9 @@
 ### (usecase - crowd funding platform) <<>> Project demo video is under cs686demo
 
 ## Bockchain Specifications
-#### - Consensus - POW + Nakamoto
-#### - Communication - Gossip Protocol
-#### - Data Structure - Merkle Patricia Trie
+#### - Consensus used in Blockchain - POW + Nakamoto
+#### - Communication between miners - Gossip Protocol
+#### - Data Structure for Block Data - Merkle Patricia Trie
 
 
 # Application has following features
