@@ -14,7 +14,7 @@
 3. Lender can choose a 'ask' request and 'promise' and make a promise for a sum of money.
 4. All previous promises for the specific 'ask' request are tracked, and if the sum of promises mount to 'asked' tokens, then money is transferred for appropriate users.
 
-5. Client can then use peer to peer token transfer to pay back the lenders.
+5. Borrower can then use peer to peer token transfer to pay back the lenders.
 
 Available balance is different from Actual balance. Available balance takes into account the sum of tokens already promised.
 Available balance is used for checking validity of transaction.
