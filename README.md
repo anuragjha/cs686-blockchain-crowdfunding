@@ -1,7 +1,6 @@
 # Peer to Peer Lending system on Blockchain
-### (usecase - crowd funding platform)
-### Project demo video is under cs686demo
-### Specifications
+### (usecase - crowd funding platform) <<>> Project demo video is under cs686demo
+## Specifications
 #### - Peer to Peer (Distributed system)
 #### - Data Structure - Merkle Patricia Trie
 #### - Communication - Gossip Protocol
